@@ -107,7 +107,7 @@ export class PayWay {
 				? formatAmount(options.shipping, currency)
 				: "";
 
-		// Hash field order must match ABA's expected order exactly
+		// Hash field order from remote docs (view_type and payment_gate are NOT in hash)
 		const hashValues = [
 			reqTime,
 			this.merchantId,
@@ -128,8 +128,6 @@ export class PayWay {
 			currency,
 			options.customFields ?? "",
 			options.returnParams ?? "",
-			options.viewType ?? "",
-			options.paymentGate?.toString() ?? "",
 			payout,
 			options.lifetime?.toString() ?? "",
 			options.additionalParams ?? "",
@@ -368,27 +366,27 @@ export class PayWay {
 			: "";
 		const payout = options.payout ? toBase64(options.payout) : "";
 
-		// Hash field order follows doc parameter table order (excluding hash itself)
+		// Hash field order from remote docs (differs from parameter table order)
 		const hashValues = [
 			reqTime,
 			this.merchantId,
 			options.transactionId,
 			amount,
-			currency,
-			options.paymentOption,
-			options.lifetime?.toString() ?? "",
-			options.qrImageTemplate,
+			items,
 			options.firstName ?? "",
 			options.lastName ?? "",
 			options.email ?? "",
 			options.phone ?? "",
 			options.purchaseType ?? "",
-			items,
+			options.paymentOption,
 			callbackUrl,
 			returnDeeplink,
+			currency,
 			customFields,
 			options.returnParams ?? "",
 			payout,
+			options.lifetime?.toString() ?? "",
+			options.qrImageTemplate,
 		];
 		const hash = createHash(hashValues, this.apiKey);
 
