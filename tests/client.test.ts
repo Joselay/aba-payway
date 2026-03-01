@@ -56,6 +56,11 @@ describe("PayWay", () => {
 			expect(params.hash).toBeTruthy();
 			expect(params.req_time).toMatch(/^\d{14}$/);
 			expect(params.action).toContain(SANDBOX_BASE_URL);
+			expect(params.payout).toBe("");
+			expect(params.lifetime).toBe("");
+			expect(params.additional_params).toBe("");
+			expect(params.google_pay_token).toBe("");
+			expect(params.skip_success_page).toBe("");
 		});
 
 		it("should base64-encode items when given as string", () => {
@@ -157,11 +162,17 @@ describe("PayWay", () => {
 		});
 
 		describe("checkTransaction", () => {
-			it("should send POST to check-transaction endpoint", async () => {
+			it("should send POST to check-transaction-2 endpoint", async () => {
 				const mockResponse = {
-					status: 0,
-					description: "Approved",
-					amount: 10.0,
+					payment_status_code: 0,
+					total_amount: 10.0,
+					original_amount: 10.0,
+					refund_amount: 0,
+					discount_amount: 0,
+					payment_amount: 10.0,
+					payment_currency: "USD",
+					apv: "123456",
+					payment_status: "APPROVED",
 				};
 
 				fetchSpy.mockResolvedValueOnce(
@@ -170,22 +181,24 @@ describe("PayWay", () => {
 
 				const result = await client.checkTransaction("order-001");
 
-				const [url] = fetchSpy.mock.calls[0]!;
+				const call = fetchSpy.mock.calls[0];
+				const [url] = call ?? [];
 				expect(url).toContain(
-					"/api/payment-gateway/v1/payments/check-transaction",
+					"/api/payment-gateway/v1/payments/check-transaction-2",
 				);
 
-				const body = fetchSpy.mock.calls[0]?.[1]?.body as FormData;
+				const body = call?.[1]?.body as FormData;
 				expect(body.get("tran_id")).toBe("order-001");
 				expect(body.get("merchant_id")).toBe("test-merchant");
 				expect(body.get("hash")).toBeTruthy();
 
-				expect(result.status).toBe(0);
+				expect(result.payment_status_code).toBe(0);
+				expect(result.payment_status).toBe("APPROVED");
 			});
 		});
 
 		describe("listTransactions", () => {
-			it("should send POST to transaction-list endpoint", async () => {
+			it("should send POST to transaction-list-2 endpoint", async () => {
 				const mockResponse = {
 					status: { code: 0 },
 					data: { data: [], total: 0, page: 1 },
@@ -201,12 +214,13 @@ describe("PayWay", () => {
 					status: "APPROVED",
 				});
 
-				const [url] = fetchSpy.mock.calls[0]!;
+				const call = fetchSpy.mock.calls[0];
+				const [url] = call ?? [];
 				expect(url).toContain(
-					"/api/payment-gateway/v1/payments/transaction-list",
+					"/api/payment-gateway/v1/payments/transaction-list-2",
 				);
 
-				const body = fetchSpy.mock.calls[0]?.[1]?.body as FormData;
+				const body = call?.[1]?.body as FormData;
 				expect(body.get("from_date")).toBe("2024-01-01");
 				expect(body.get("to_date")).toBe("2024-12-31");
 				expect(body.get("status")).toBe("APPROVED");

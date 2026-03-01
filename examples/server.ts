@@ -200,6 +200,37 @@ Bun.serve({
 				}
 			},
 		},
+		"/api/check-transaction/:tranId": {
+			GET: async (req) => {
+				try {
+					const result = await payway.checkTransaction(req.params.tranId);
+					return Response.json(result);
+				} catch (err: unknown) {
+					const message =
+						err instanceof Error ? err.message : "Unknown error";
+					return Response.json({ error: message }, { status: 500 });
+				}
+			},
+		},
+		"/api/transactions": {
+			GET: async (req) => {
+				try {
+					const url = new URL(req.url);
+					const result = await payway.listTransactions({
+						fromDate: url.searchParams.get("from_date") ?? undefined,
+						toDate: url.searchParams.get("to_date") ?? undefined,
+						status: (url.searchParams.get("status") as import("../src/types.ts").TransactionStatus) ?? undefined,
+						page: url.searchParams.has("page") ? Number(url.searchParams.get("page")) : undefined,
+						pagination: url.searchParams.has("pagination") ? Number(url.searchParams.get("pagination")) : undefined,
+					});
+					return Response.json(result);
+				} catch (err: unknown) {
+					const message =
+						err instanceof Error ? err.message : "Unknown error";
+					return Response.json({ error: message }, { status: 500 });
+				}
+			},
+		},
 		"/api/callback": {
 			POST: async (req) => {
 				const formData = await req.formData();

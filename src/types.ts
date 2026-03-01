@@ -15,7 +15,7 @@ export type PaymentOption =
 
 export type Currency = "USD" | "KHR";
 
-export type TransactionType = "purchase" | "pre_auth";
+export type TransactionType = "purchase" | "pre-auth";
 
 export type TransactionStatus =
 	| "APPROVED"
@@ -23,8 +23,7 @@ export type TransactionStatus =
 	| "PENDING"
 	| "PRE-AUTH"
 	| "CANCELLED"
-	| "REFUNDED"
-	| "ERROR";
+	| "REFUNDED";
 
 export interface CreateTransactionOptions {
 	transactionId: string;
@@ -43,11 +42,13 @@ export interface CreateTransactionOptions {
 	returnDeeplink?: string;
 	returnParams?: string;
 	shipping?: number;
-	ctid?: string;
-	pwt?: string;
 	type?: TransactionType;
 	customFields?: string;
-	topupChannel?: string;
+	payout?: string;
+	lifetime?: number;
+	additionalParams?: string;
+	googlePayToken?: string;
+	skipSuccessPage?: string;
 }
 
 export interface ItemEntry {
@@ -76,12 +77,14 @@ export interface CheckoutParams {
 	return_deeplink: string;
 	return_params: string;
 	shipping: string;
-	ctid: string;
-	pwt: string;
 	merchant_id: string;
 	req_time: string;
 	custom_fields: string;
-	topup_channel: string;
+	payout: string;
+	lifetime: string;
+	additional_params: string;
+	google_pay_token: string;
+	skip_success_page: string;
 }
 
 export interface CheckTransactionOptions {
@@ -91,10 +94,11 @@ export interface CheckTransactionOptions {
 export interface ListTransactionsOptions {
 	fromDate?: string;
 	toDate?: string;
-	transactionId?: string;
+	fromAmount?: number;
+	toAmount?: number;
 	status?: TransactionStatus;
 	page?: number;
-	limit?: number;
+	pagination?: number;
 }
 
 export interface PayWayResponse<T> {
@@ -109,13 +113,15 @@ export interface PayWayResponseStatus {
 }
 
 export interface CheckTransactionData {
-	status: number;
-	description?: string;
-	amount?: number;
-	totalAmount?: number;
-	apv?: string;
-	datetime?: string;
-	original_currency?: string;
+	payment_status_code: number;
+	total_amount: number;
+	original_amount: number;
+	refund_amount: number;
+	discount_amount: number;
+	payment_amount: number;
+	payment_currency: string;
+	apv: string;
+	payment_status: string;
 }
 
 export interface TransactionListItem {

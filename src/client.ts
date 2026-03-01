@@ -6,15 +6,20 @@ import {
 import { PayWayAPIError, PayWayConfigError } from "./errors.ts";
 import { createHash } from "./hash.ts";
 import type {
-	CheckTransactionData,
 	CheckoutParams,
+	CheckTransactionData,
 	CreateTransactionOptions,
 	ListTransactionsData,
 	ListTransactionsOptions,
 	PayWayConfig,
 	PayWayResponse,
 } from "./types.ts";
-import { buildFormData, formatAmount, formatRequestTime, toBase64 } from "./utils.ts";
+import {
+	buildFormData,
+	formatAmount,
+	formatRequestTime,
+	toBase64,
+} from "./utils.ts";
 
 export class PayWay {
 	private readonly merchantId: string;
@@ -69,10 +74,7 @@ export class PayWay {
 			options.transactionId,
 			amount,
 			items,
-			"", // gdt
 			shipping,
-			options.ctid ?? "",
-			options.pwt ?? "",
 			options.firstName ?? "",
 			options.lastName ?? "",
 			options.email ?? "",
@@ -83,10 +85,14 @@ export class PayWay {
 			options.cancelUrl ?? "",
 			options.continueSuccessUrl ?? "",
 			options.returnDeeplink ?? "",
-			options.topupChannel ?? "",
 			currency,
 			options.customFields ?? "",
 			options.returnParams ?? "",
+			options.payout ?? "",
+			options.lifetime?.toString() ?? "",
+			options.additionalParams ?? "",
+			options.googlePayToken ?? "",
+			options.skipSuccessPage ?? "",
 		];
 
 		const hash = createHash(hashValues, this.apiKey);
@@ -110,18 +116,18 @@ export class PayWay {
 			return_deeplink: options.returnDeeplink ?? "",
 			return_params: options.returnParams ?? "",
 			shipping,
-			ctid: options.ctid ?? "",
-			pwt: options.pwt ?? "",
 			merchant_id: this.merchantId,
 			req_time: reqTime,
 			custom_fields: options.customFields ?? "",
-			topup_channel: options.topupChannel ?? "",
+			payout: options.payout ?? "",
+			lifetime: options.lifetime?.toString() ?? "",
+			additional_params: options.additionalParams ?? "",
+			google_pay_token: options.googlePayToken ?? "",
+			skip_success_page: options.skipSuccessPage ?? "",
 		};
 	}
 
-	async checkTransaction(
-		transactionId: string,
-	): Promise<CheckTransactionData> {
+	async checkTransaction(transactionId: string): Promise<CheckTransactionData> {
 		const reqTime = formatRequestTime();
 
 		const hashValues = [reqTime, this.merchantId, transactionId];
@@ -148,23 +154,25 @@ export class PayWay {
 		const hashValues = [
 			reqTime,
 			this.merchantId,
-			options.transactionId ?? "",
 			options.fromDate ?? "",
 			options.toDate ?? "",
+			options.fromAmount?.toString() ?? "",
+			options.toAmount?.toString() ?? "",
 			options.status ?? "",
 			options.page?.toString() ?? "",
-			options.limit?.toString() ?? "",
+			options.pagination?.toString() ?? "",
 		];
 		const hash = createHash(hashValues, this.apiKey);
 
 		const params: Record<string, string | undefined> = {
 			hash,
-			tran_id: options.transactionId,
 			from_date: options.fromDate,
 			to_date: options.toDate,
+			from_amount: options.fromAmount?.toString(),
+			to_amount: options.toAmount?.toString(),
 			status: options.status,
 			page: options.page?.toString(),
-			limit: options.limit?.toString(),
+			pagination: options.pagination?.toString(),
 			req_time: reqTime,
 			merchant_id: this.merchantId,
 		};
