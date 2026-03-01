@@ -12,6 +12,7 @@ import type {
 	ListTransactionsData,
 	ListTransactionsOptions,
 	PayWayConfig,
+	PayWayResponse,
 } from "./types.ts";
 import { buildFormData, formatAmount, formatRequestTime, toBase64 } from "./utils.ts";
 
@@ -141,7 +142,7 @@ export class PayWay {
 
 	async listTransactions(
 		options: ListTransactionsOptions = {},
-	): Promise<ListTransactionsData> {
+	): Promise<PayWayResponse<ListTransactionsData>> {
 		const reqTime = formatRequestTime();
 
 		const hashValues = [
@@ -168,7 +169,7 @@ export class PayWay {
 			merchant_id: this.merchantId,
 		};
 
-		return this.request<ListTransactionsData>(
+		return this.request<PayWayResponse<ListTransactionsData>>(
 			ENDPOINTS.transactionList,
 			params,
 		);

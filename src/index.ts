@@ -26,6 +26,7 @@ export type {
 	PayWayResponseStatus,
 	TransactionListItem,
 	TransactionStatus,
+	TransactionType,
 } from "./types.ts";
 export {
 	buildFormData,

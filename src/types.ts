@@ -15,6 +15,8 @@ export type PaymentOption =
 
 export type Currency = "USD" | "KHR";
 
+export type TransactionType = "purchase" | "pre_auth";
+
 export type TransactionStatus =
 	| "APPROVED"
 	| "DECLINED"
@@ -43,7 +45,7 @@ export interface CreateTransactionOptions {
 	shipping?: number;
 	ctid?: string;
 	pwt?: string;
-	type?: string;
+	type?: TransactionType;
 	customFields?: string;
 	topupChannel?: string;
 }
@@ -61,13 +63,13 @@ export interface CheckoutParams {
 	tran_id: string;
 	amount: string;
 	items: string;
-	currency: string;
+	currency: Currency;
 	firstname: string;
 	lastname: string;
 	email: string;
 	phone: string;
-	type: string;
-	payment_option: string;
+	type: TransactionType;
+	payment_option: PaymentOption | "";
 	return_url: string;
 	cancel_url: string;
 	continue_success_url: string;
