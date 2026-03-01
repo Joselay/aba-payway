@@ -6,12 +6,11 @@ export interface PayWayConfig {
 
 export type PaymentOption =
 	| "cards"
-	| "abapay"
-	| "abapay_deeplink"
+	| "abapay_khqr"
 	| "abapay_khqr_deeplink"
-	| "wechat"
 	| "alipay"
-	| "bakong";
+	| "wechat"
+	| "google_pay";
 
 export type Currency = "USD" | "KHR";
 
@@ -122,19 +121,35 @@ export interface CheckTransactionData {
 	payment_currency: string;
 	apv: string;
 	payment_status: string;
+	transaction_date: string;
 }
 
 export interface TransactionListItem {
-	tran_id: string;
-	merchant_id: string;
-	status: TransactionStatus;
+	transaction_id: string;
+	transaction_date: string;
 	apv: string;
-	amount: number;
-	created_date: string;
+	payment_status: string;
+	payment_status_code: number;
+	original_amount: number;
+	original_currency: string;
+	total_amount: number;
+	discount_amount: number;
+	refund_amount: number;
+	payment_amount: number;
+	payment_currency: string;
+	first_name: string;
+	last_name: string;
+	email: string;
+	phone: string;
+	bank_ref: string;
+	payer_account: string;
+	bank_name: string;
+	card_source: string;
+	payment_type: string;
 }
 
 export interface ListTransactionsData {
 	data: TransactionListItem[];
-	total: number;
-	page: number;
+	page: string;
+	pagination: string;
 }

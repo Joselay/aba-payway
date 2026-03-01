@@ -173,6 +173,7 @@ describe("PayWay", () => {
 					payment_currency: "USD",
 					apv: "123456",
 					payment_status: "APPROVED",
+					transaction_date: "2024-01-15 10:30:00",
 				};
 
 				fetchSpy.mockResolvedValueOnce(
@@ -201,7 +202,7 @@ describe("PayWay", () => {
 			it("should send POST to transaction-list-2 endpoint", async () => {
 				const mockResponse = {
 					status: { code: 0 },
-					data: { data: [], total: 0, page: 1 },
+					data: { data: [], page: "1", pagination: "20" },
 				};
 
 				fetchSpy.mockResolvedValueOnce(
@@ -225,7 +226,7 @@ describe("PayWay", () => {
 				expect(body.get("to_date")).toBe("2024-12-31");
 				expect(body.get("status")).toBe("APPROVED");
 
-				expect(result.data?.total).toBe(0);
+				expect(result.data?.page).toBe("1");
 			});
 
 			it("should work with no options", async () => {
@@ -233,7 +234,7 @@ describe("PayWay", () => {
 					new Response(
 						JSON.stringify({
 							status: { code: 0 },
-							data: { data: [], total: 0, page: 1 },
+							data: { data: [], page: "1", pagination: "20" },
 						}),
 						{ status: 200 },
 					),
