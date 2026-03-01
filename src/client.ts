@@ -54,8 +54,14 @@ export class PayWay {
 			items = "";
 		}
 
-		// Return URL must be base64-encoded per ABA docs
+		// Return URL and return deeplink must be base64-encoded per ABA docs
 		const returnUrl = options.returnUrl ? toBase64(options.returnUrl) : "";
+		const returnDeeplink = options.returnDeeplink
+			? toBase64(options.returnDeeplink)
+			: "";
+
+		// Payout must be base64-encoded JSON string per ABA docs
+		const payout = options.payout ? toBase64(options.payout) : "";
 
 		const shipping =
 			options.shipping !== undefined
@@ -79,17 +85,17 @@ export class PayWay {
 			returnUrl,
 			options.cancelUrl ?? "",
 			options.continueSuccessUrl ?? "",
-			options.returnDeeplink ?? "",
+			returnDeeplink,
 			currency,
 			options.customFields ?? "",
 			options.returnParams ?? "",
 			options.viewType ?? "",
 			options.paymentGate?.toString() ?? "",
-			options.payout ?? "",
+			payout,
 			options.lifetime?.toString() ?? "",
 			options.additionalParams ?? "",
 			options.googlePayToken ?? "",
-			options.skipSuccessPage ?? "",
+			options.skipSuccessPage?.toString() ?? "",
 		];
 
 		const hash = createHash(hashValues, this.apiKey);
@@ -110,17 +116,17 @@ export class PayWay {
 			return_url: returnUrl,
 			cancel_url: options.cancelUrl ?? "",
 			continue_success_url: options.continueSuccessUrl ?? "",
-			return_deeplink: options.returnDeeplink ?? "",
+			return_deeplink: returnDeeplink,
 			return_params: options.returnParams ?? "",
 			shipping,
 			merchant_id: this.merchantId,
 			req_time: reqTime,
 			custom_fields: options.customFields ?? "",
-			payout: options.payout ?? "",
+			payout,
 			lifetime: options.lifetime?.toString() ?? "",
 			additional_params: options.additionalParams ?? "",
 			google_pay_token: options.googlePayToken ?? "",
-			skip_success_page: options.skipSuccessPage ?? "",
+			skip_success_page: options.skipSuccessPage?.toString() ?? "",
 			view_type: options.viewType ?? "",
 			payment_gate: options.paymentGate?.toString() ?? "",
 		};

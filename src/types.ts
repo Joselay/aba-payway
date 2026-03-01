@@ -47,7 +47,7 @@ export interface CreateTransactionOptions {
 	lifetime?: number;
 	additionalParams?: string;
 	googlePayToken?: string;
-	skipSuccessPage?: string;
+	skipSuccessPage?: number;
 	viewType?: string;
 	paymentGate?: number;
 }
