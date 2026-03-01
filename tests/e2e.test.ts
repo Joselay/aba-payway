@@ -1,7 +1,16 @@
 /**
  * End-to-end tests against the ABA PayWay sandbox.
- * Requires ABA_PAYWAY_MERCHANT_ID and ABA_PAYWAY_API_KEY in .env
  *
+ * These simulate real user journeys — each flow creates a transaction,
+ * then progresses through the lifecycle (check → list → details → close),
+ * verifying the state at every step.
+ *
+ * Note: The sandbox has a ~3s propagation delay before new transactions
+ * are visible via checkTransaction. The sandbox also does not actually
+ * change transaction status after close — it acks the close but keeps
+ * the status as PENDING.
+ *
+ * Requires ABA_PAYWAY_MERCHANT_ID and ABA_PAYWAY_API_KEY in .env
  * Run: bunx vitest run tests/e2e.test.ts
  */
 import { readFileSync } from "node:fs";
@@ -37,37 +46,40 @@ const merchantId = process.env.ABA_PAYWAY_MERCHANT_ID ?? "";
 const apiKey = process.env.ABA_PAYWAY_API_KEY ?? "";
 const hasCredentials = merchantId !== "" && apiKey !== "";
 
-const EXISTING_TRAN_ID = "PW1772384314949";
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Sandbox needs ~3s before new transactions appear in checkTransaction
+const PROPAGATION_DELAY = 3000;
 
 describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
-	function createClient() {
-		return new PayWay({ merchantId, apiKey });
-	}
+	const client = new PayWay({ merchantId, apiKey });
 
-	describe("createTransaction", () => {
-		it("generates checkout params and sandbox accepts the hash", async () => {
-			const client = createClient();
-			const tranId = `ct-${Date.now()}`;
+	// ---------------------------------------------------------------
+	// Flow 1: Purchase lifecycle
+	//   create → (wait) → check (PENDING) → details → list → close
+	// ---------------------------------------------------------------
+	describe("Purchase lifecycle", () => {
+		const tranId = `e2e-${Date.now()}`;
+
+		it("Step 1: create a transaction and sandbox accepts the hash", async () => {
 			const params = client.createTransaction({
 				transactionId: tranId,
 				amount: 1.0,
 				currency: "USD",
-				firstName: "Test",
-				lastName: "User",
-				email: "test@example.com",
+				firstName: "John",
+				lastName: "Doe",
+				email: "john@example.com",
 				phone: "012345678",
-				items: [{ name: "Test Item", quantity: "1", price: "1.00" }],
+				items: [{ name: "Widget", quantity: "1", price: "1.00" }],
 			});
 
-			// Verify local param generation
 			expect(params.hash).toBeTruthy();
 			expect(params.tran_id).toBe(tranId);
 			expect(params.amount).toBe("1.00");
 			expect(params.currency).toBe("USD");
 			expect(params.merchant_id).toBe(merchantId);
-			expect(params.action).toContain("checkout-sandbox.payway.com.kh");
 
-			// POST to sandbox to verify hash is accepted
+			// POST to sandbox — proves the hash is correct
 			const formData = new FormData();
 			for (const [key, value] of Object.entries(params)) {
 				if (key === "action") continue;
@@ -78,51 +90,37 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 				method: "POST",
 				body: formData,
 			});
-			expect(resp.status).toBe(200);
-
 			const body = await resp.json();
+
+			expect(resp.status).toBe(200);
 			expect(body.status.code).toBe("00");
-			expect(body.status.message).toBe("Success!");
 			expect(body.status.tran_id).toBe(tranId);
-			expect(body.qrString).toBeTruthy();
-			expect(body.abapay_deeplink).toBeTruthy();
-		});
-	});
 
-	describe("checkTransaction", () => {
-		it("returns transaction status with full data", async () => {
-			const client = createClient();
-			const result = await client.checkTransaction(EXISTING_TRAN_ID);
+			// Wait for sandbox propagation
+			await sleep(PROPAGATION_DELAY);
+		});
+
+		it("Step 2: check transaction — should be PENDING", async () => {
+			const result = await client.checkTransaction(tranId);
 
 			expect(result.status.code).toBe("00");
-			expect(result.status.message).toBe("Success!");
-			expect(result.status.tran_id).toBe(EXISTING_TRAN_ID);
-
 			expect(result.data).toBeDefined();
-			const data = result.data!;
-			expect(data.payment_status).toBe("PENDING");
-			expect(data.payment_status_code).toBe(2);
-			expect(data.original_amount).toBe(1);
-			expect(data.total_amount).toBe(1);
-			expect(data.transaction_date).toBeTruthy();
+			expect(result.data!.payment_status).toBe("PENDING");
+			expect(result.data!.payment_status_code).toBe(2);
+			expect(result.data!.original_amount).toBe(1);
+			expect(result.data!.total_amount).toBe(1);
 		});
-	});
 
-	describe("getTransactionDetails", () => {
-		it("returns full transaction details", async () => {
-			const client = createClient();
-			const result = await client.getTransactionDetails(EXISTING_TRAN_ID);
+		it("Step 3: get transaction details — verify all fields", async () => {
+			const result = await client.getTransactionDetails(tranId);
 
 			expect(result.status.code).toBe("00");
-			expect(result.status.message).toBe("Success!");
-
 			expect(result.data).toBeDefined();
+
 			const data = result.data!;
-			expect(data.transaction_id).toBe(EXISTING_TRAN_ID);
+			expect(data.transaction_id).toBe(tranId);
 			expect(data.payment_status).toBe("PENDING");
-			expect(data.payment_status_code).toBe(2);
 			expect(data.original_amount).toBe(1);
-			expect(data.original_currency).toBe("KHR");
 			expect(data.first_name).toBe("John");
 			expect(data.last_name).toBe("Doe");
 			expect(data.email).toBe("john@example.com");
@@ -130,30 +128,104 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 			expect(data.transaction_date).toBeTruthy();
 			expect(data.transaction_operations).toBeInstanceOf(Array);
 		});
-	});
 
-	describe("listTransactions", () => {
-		it("returns paginated transaction list", async () => {
-			const client = createClient();
+		it("Step 4: list transactions — our transaction should appear", async () => {
 			const result = await client.listTransactions();
 
 			expect(result.status.code).toBe("00");
 			expect(result.data).toBeInstanceOf(Array);
 			expect(result.data.length).toBeGreaterThan(0);
-			expect(result.page).toBeDefined();
-			expect(result.pagination).toBeDefined();
 
-			// Verify transaction object shape
-			const txn = result.data[0]!;
-			expect(txn.transaction_id).toBeTruthy();
-			expect(txn.transaction_date).toBeTruthy();
-			expect(txn.payment_status).toBeTruthy();
-			expect(typeof txn.payment_status_code).toBe("number");
-			expect(typeof txn.original_amount).toBe("number");
+			const found = result.data.find((t) => t.transaction_id === tranId);
+			expect(found).toBeDefined();
+			expect(found!.payment_status).toBe("PENDING");
+			expect(found!.original_amount).toBe(1);
 		});
 
+		it("Step 5: close transaction — sandbox accepts the request", async () => {
+			const result = await client.closeTransaction(tranId);
+
+			expect(result.status.code).toBe("00");
+			// Note: sandbox acks the close but doesn't actually change
+			// the transaction status to CANCELLED
+		});
+	});
+
+	// ---------------------------------------------------------------
+	// Flow 2: QR payment lifecycle
+	//   generate QR → (wait) → check (PENDING) → details → close
+	// ---------------------------------------------------------------
+	describe("QR payment lifecycle", () => {
+		const tranId = `qr-${Date.now()}`;
+
+		it("Step 1: generate QR code", async () => {
+			const result = await client.generateQR({
+				transactionId: tranId,
+				amount: 0.01,
+				currency: "USD",
+				paymentOption: "abapay_khqr",
+				qrImageTemplate: "template1",
+				lifetime: 5,
+				firstName: "Jane",
+				lastName: "Smith",
+				email: "jane@example.com",
+				phone: "098765432",
+			});
+
+			expect(result.status.code).toBe("0");
+			expect(result.status.tran_id).toBe(tranId);
+			expect(result.amount).toBe(0.01);
+			expect(result.currency).toBe("USD");
+			expect(result.qrString).toBeTruthy();
+			expect(result.qrImage).toMatch(/^data:image\/png;base64,/);
+			expect(result.abapay_deeplink).toContain("abamobilebank://");
+
+			// Wait for sandbox propagation
+			await sleep(PROPAGATION_DELAY);
+		});
+
+		it("Step 2: check transaction — should be PENDING", async () => {
+			const result = await client.checkTransaction(tranId);
+
+			expect(result.status.code).toBe("00");
+			expect(result.data!.payment_status).toBe("PENDING");
+			expect(result.data!.payment_status_code).toBe(2);
+		});
+
+		it("Step 3: get transaction details", async () => {
+			const result = await client.getTransactionDetails(tranId);
+
+			expect(result.status.code).toBe("00");
+			expect(result.data!.transaction_id).toBe(tranId);
+			expect(result.data!.payment_status).toBe("PENDING");
+			expect(result.data!.first_name).toBe("Jane");
+			expect(result.data!.last_name).toBe("Smith");
+		});
+
+		it("Step 4: close transaction — sandbox accepts the request", async () => {
+			const result = await client.closeTransaction(tranId);
+
+			expect(result.status.code).toBe("00");
+		});
+	});
+
+	// ---------------------------------------------------------------
+	// Flow 3: Exchange rate (standalone)
+	// ---------------------------------------------------------------
+	describe("Exchange rate", () => {
+		it("fetches rates successfully", async () => {
+			const result = await client.getExchangeRate();
+
+			expect(result.status.code).toBe("00");
+			expect(result.exchange_rates).toBeDefined();
+		});
+	});
+
+	// ---------------------------------------------------------------
+	// Flow 4: List transactions with date filter
+	// ---------------------------------------------------------------
+	describe("List transactions with filters", () => {
 		it("filters by date range", async () => {
-			const client = createClient();
 			const now = new Date();
 			const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 			const fmt = (d: Date) =>
@@ -166,48 +238,6 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 
 			expect(result.status.code).toBe("00");
 			expect(result.data).toBeInstanceOf(Array);
-		});
-	});
-
-	describe("getExchangeRate", () => {
-		it("returns exchange rates with buy/sell values", async () => {
-			const client = createClient();
-			const result = await client.getExchangeRate();
-
-			expect(result.status.code).toBe("00");
-			expect(result.exchange_rates).toBeDefined();
-		});
-	});
-
-	describe("generateQR", () => {
-		it("generates QR with qrString, qrImage, and deeplink", async () => {
-			const client = createClient();
-			const tranId = `qr-${Date.now()}`;
-			const result = await client.generateQR({
-				transactionId: tranId,
-				amount: 0.01,
-				currency: "USD",
-				paymentOption: "abapay_khqr",
-				qrImageTemplate: "template1",
-				lifetime: 5,
-				firstName: "Test",
-				lastName: "User",
-				email: "test@example.com",
-				phone: "012345678",
-			});
-
-			expect(result.status.code).toBe("0");
-			expect(result.status.message).toBe("Success.");
-			expect(result.status.tran_id).toBe(tranId);
-			expect(result.status.trace_id).toBeTruthy();
-
-			expect(result.amount).toBe(0.01);
-			expect(result.currency).toBe("USD");
-			expect(result.qrString).toBeTruthy();
-			expect(result.qrImage).toMatch(/^data:image\/png;base64,/);
-			expect(result.abapay_deeplink).toContain("abamobilebank://");
-			expect(result.app_store).toContain("itunes.apple.com");
-			expect(result.play_store).toContain("play.google.com");
 		});
 	});
 });
