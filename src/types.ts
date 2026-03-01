@@ -1,7 +1,9 @@
 export interface PayWayConfig {
-	merchantId: string;
-	apiKey: string;
-	production?: boolean;
+	readonly merchantId: string;
+	readonly apiKey: string;
+	readonly production?: boolean;
+	/** Request timeout in milliseconds. Default: 30000 (30s). */
+	readonly timeout?: number;
 }
 
 export type PaymentOption =
@@ -90,15 +92,12 @@ export interface CheckoutParams {
 	payment_gate: string;
 }
 
-export interface CheckTransactionOptions {
-	transactionId: string;
-}
-
 export interface ListTransactionsOptions {
 	fromDate?: string;
 	toDate?: string;
 	fromAmount?: number;
 	toAmount?: number;
+	/** Single status or comma-separated: e.g. `"APPROVED"` or `"APPROVED,DECLINED"` */
 	status?: string;
 	page?: number;
 	pagination?: number;
@@ -123,9 +122,9 @@ export interface CheckTransactionData {
 	refund_amount: number;
 	discount_amount: number;
 	payment_amount: number;
-	payment_currency: string;
+	payment_currency: Currency;
 	apv: string;
-	payment_status: string;
+	payment_status: TransactionStatus;
 	transaction_date: string;
 }
 
@@ -133,15 +132,15 @@ export interface TransactionListItem {
 	transaction_id: string;
 	transaction_date: string;
 	apv: string;
-	payment_status: string;
+	payment_status: TransactionStatus;
 	payment_status_code: number;
 	original_amount: number;
-	original_currency: string;
+	original_currency: Currency;
 	total_amount: number;
 	discount_amount: number;
 	refund_amount: number;
 	payment_amount: number;
-	payment_currency: string;
+	payment_currency: Currency;
 	first_name: string;
 	last_name: string;
 	email: string;
@@ -153,15 +152,137 @@ export interface TransactionListItem {
 	payment_type: string;
 }
 
-export interface ListTransactionsData {
-	data: TransactionListItem[];
-	page: string;
-	pagination: string;
-}
-
 export interface ListTransactionsResponse {
 	data: TransactionListItem[];
 	page: string;
 	pagination: string;
+	status: PayWayResponseStatus;
+}
+
+// --- Close Transaction ---
+
+export interface CloseTransactionResponse {
+	status: PayWayResponseStatus;
+}
+
+// --- Get Transaction Details ---
+
+export interface TransactionOperation {
+	status: string;
+	amount: number;
+	transaction_date: string;
+	bank_ref: string;
+}
+
+export interface TransactionDetailData {
+	transaction_id: string;
+	payment_status_code: number;
+	payment_status: TransactionStatus;
+	original_amount: number;
+	original_currency: Currency;
+	payment_amount: number;
+	payment_currency: Currency;
+	total_amount: number;
+	refund_amount: number;
+	discount_amount: number;
+	apv: string;
+	transaction_date: string;
+	first_name: string;
+	last_name: string;
+	email: string;
+	phone: string;
+	bank_ref: string;
+	payment_type: string;
+	payer_account: string;
+	bank_name: string;
+	card_source: string;
+	transaction_operations: TransactionOperation[];
+}
+
+// --- Exchange Rate ---
+
+export type ExchangeRateCurrency =
+	| "aud"
+	| "sgd"
+	| "eur"
+	| "gbp"
+	| "myr"
+	| "thb"
+	| "hkd"
+	| "cny"
+	| "cad"
+	| "krw"
+	| "jpy"
+	| "vnd";
+
+export interface ExchangeRate {
+	sell: string;
+	buy: string;
+}
+
+export interface ExchangeRateResponse {
+	status: PayWayResponseStatus;
+	exchange_rates: Record<ExchangeRateCurrency, ExchangeRate>;
+}
+
+// --- Generate QR ---
+
+export type QRPaymentOption = "abapay_khqr" | "wechat" | "alipay";
+
+export interface GenerateQROptions {
+	transactionId: string;
+	amount: number;
+	currency?: Currency;
+	paymentOption: QRPaymentOption;
+	lifetime?: number;
+	qrImageTemplate: string;
+	firstName?: string;
+	lastName?: string;
+	email?: string;
+	phone?: string;
+	purchaseType?: TransactionType;
+	items?: string;
+	callbackUrl?: string;
+	returnDeeplink?: string;
+	customFields?: string;
+	returnParams?: string;
+	payout?: string;
+}
+
+export interface GenerateQRResponse {
+	status: PayWayResponseStatus & { trace_id?: string };
+	amount: number;
+	currency: string;
+	qrString: string;
+	qrImage: string;
+	abapay_deeplink: string;
+	app_store: string;
+	play_store: string;
+}
+
+// --- Get Transactions by Merchant Reference ---
+
+export interface TransactionByRefItem {
+	transaction_id: string;
+	transaction_date: string;
+	apv: string;
+	payment_status: TransactionStatus;
+	payment_status_code: number;
+	original_amount: number;
+	original_currency: Currency;
+	total_amount: number;
+	discount_amount: number;
+	refund_amount: number;
+	payment_amount: number;
+	payment_currency: Currency;
+	bank_ref: string;
+	payer_account: string;
+	bank_name: string;
+	payment_type: string;
+	merchant_ref: string;
+}
+
+export interface GetTransactionsByRefResponse {
+	data: TransactionByRefItem[];
 	status: PayWayResponseStatus;
 }

@@ -39,11 +39,19 @@
 		"typescript",
 		"sdk"
 	],
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"sideEffects": false,
 	"license": "MIT",
-	"author": "",
+	"author": "Joselay",
 	"repository": {
 		"type": "git",
-		"url": ""
+		"url": "git+https://github.com/Joselay/aba-payway.git"
+	},
+	"homepage": "https://github.com/Joselay/aba-payway#readme",
+	"bugs": {
+		"url": "https://github.com/Joselay/aba-payway/issues"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.4",

@@ -3,24 +3,44 @@ import {
 	PRODUCTION_BASE_URL,
 	SANDBOX_BASE_URL,
 } from "./constants.ts";
-import { PayWayAPIError, PayWayConfigError } from "./errors.ts";
+import { PayWayAPIError, PayWayConfigError, PayWayError } from "./errors.ts";
 import { createHash } from "./hash.ts";
 import type {
 	CheckoutParams,
 	CheckTransactionData,
+	CloseTransactionResponse,
 	CreateTransactionOptions,
+	ExchangeRateResponse,
+	GenerateQROptions,
+	GenerateQRResponse,
+	GetTransactionsByRefResponse,
 	ListTransactionsOptions,
 	ListTransactionsResponse,
 	PayWayConfig,
 	PayWayResponse,
+	TransactionDetailData,
 } from "./types.ts";
-import { formatAmount, formatRequestTime, toBase64 } from "./utils.ts";
+import {
+	buildFormData,
+	formatAmount,
+	formatRequestTime,
+	toBase64,
+} from "./utils.ts";
 
+/**
+ * Main SDK client for ABA PayWay.
+ * Provides methods for creating transactions, checking status, and listing transactions.
+ */
 export class PayWay {
 	private readonly merchantId: string;
 	private readonly apiKey: string;
 	private readonly baseUrl: string;
+	private readonly timeout: number;
 
+	/**
+	 * @param config - Merchant credentials and environment selection.
+	 * @throws {PayWayConfigError} If `merchantId` or `apiKey` is empty.
+	 */
 	constructor(config: PayWayConfig) {
 		if (!config.merchantId) {
 			throw new PayWayConfigError("merchantId is required");
@@ -32,6 +52,7 @@ export class PayWay {
 		this.merchantId = config.merchantId;
 		this.apiKey = config.apiKey;
 		this.baseUrl = config.production ? PRODUCTION_BASE_URL : SANDBOX_BASE_URL;
+		this.timeout = config.timeout ?? 30_000;
 	}
 
 	/**
@@ -39,6 +60,24 @@ export class PayWay {
 	 * Returns form params to be submitted from the browser via ABA's checkout JS SDK.
 	 */
 	createTransaction(options: CreateTransactionOptions): CheckoutParams {
+		if (!options.transactionId) {
+			throw new PayWayConfigError("transactionId is required");
+		}
+		if (options.transactionId.length > 20) {
+			throw new PayWayConfigError(
+				"transactionId must be at most 20 characters",
+			);
+		}
+		if (options.amount <= 0) {
+			throw new PayWayConfigError("amount must be greater than 0");
+		}
+		if (
+			options.lifetime !== undefined &&
+			(options.lifetime < 3 || options.lifetime > 43_200)
+		) {
+			throw new PayWayConfigError("lifetime must be between 3 and 43200");
+		}
+
 		const reqTime = formatRequestTime();
 		const currency = options.currency ?? "USD";
 		const amount = formatAmount(options.amount, currency);
@@ -132,9 +171,18 @@ export class PayWay {
 		};
 	}
 
+	/**
+	 * Check the status of a transaction.
+	 * @param transactionId - The unique transaction ID to look up.
+	 * @throws {PayWayAPIError} If the API returns a non-2xx response.
+	 */
 	async checkTransaction(
 		transactionId: string,
 	): Promise<PayWayResponse<CheckTransactionData>> {
+		if (!transactionId) {
+			throw new PayWayConfigError("transactionId is required");
+		}
+
 		const reqTime = formatRequestTime();
 
 		const hashValues = [reqTime, this.merchantId, transactionId];
@@ -153,6 +201,11 @@ export class PayWay {
 		);
 	}
 
+	/**
+	 * List transactions with optional filters. Max 3-day date range.
+	 * @param options - Filter and pagination options.
+	 * @throws {PayWayAPIError} If the API returns a non-2xx response.
+	 */
 	async listTransactions(
 		options: ListTransactionsOptions = {},
 	): Promise<ListTransactionsResponse> {
@@ -190,35 +243,265 @@ export class PayWay {
 		);
 	}
 
-	private async request<T>(
-		endpoint: string,
-		params: Record<string, string | undefined>,
-	): Promise<T> {
-		const url = `${this.baseUrl}${endpoint}`;
-		const formData = new FormData();
-		for (const [key, value] of Object.entries(params)) {
-			if (value !== undefined && value !== null && value !== "") {
-				formData.append(key, value);
-			}
+	/**
+	 * Get detailed information about a transaction, including its operation history.
+	 * @param transactionId - The unique transaction ID to look up.
+	 * @throws {PayWayAPIError} If the API returns a non-2xx response.
+	 */
+	async getTransactionDetails(
+		transactionId: string,
+	): Promise<PayWayResponse<TransactionDetailData>> {
+		if (!transactionId) {
+			throw new PayWayConfigError("transactionId is required");
 		}
 
-		const response = await fetch(url, {
-			method: "POST",
-			body: formData,
-		});
+		const reqTime = formatRequestTime();
+		const hashValues = [reqTime, this.merchantId, transactionId];
+		const hash = createHash(hashValues, this.apiKey);
+
+		const params: Record<string, string> = {
+			hash,
+			tran_id: transactionId,
+			req_time: reqTime,
+			merchant_id: this.merchantId,
+		};
+
+		return this.request<PayWayResponse<TransactionDetailData>>(
+			ENDPOINTS.transactionDetail,
+			params,
+			"json",
+		);
+	}
+
+	/**
+	 * Close (cancel) a pending transaction.
+	 * @param transactionId - The transaction ID to close.
+	 * @throws {PayWayAPIError} If the API returns a non-2xx response.
+	 */
+	async closeTransaction(
+		transactionId: string,
+	): Promise<CloseTransactionResponse> {
+		if (!transactionId) {
+			throw new PayWayConfigError("transactionId is required");
+		}
+
+		const reqTime = formatRequestTime();
+		const hashValues = [reqTime, this.merchantId, transactionId];
+		const hash = createHash(hashValues, this.apiKey);
+
+		const params: Record<string, string> = {
+			hash,
+			tran_id: transactionId,
+			req_time: reqTime,
+			merchant_id: this.merchantId,
+		};
+
+		return this.request<CloseTransactionResponse>(
+			ENDPOINTS.closeTransaction,
+			params,
+			"json",
+		);
+	}
+
+	/**
+	 * Fetch the latest exchange rates from ABA Bank.
+	 * @throws {PayWayAPIError} If the API returns a non-2xx response.
+	 */
+	async getExchangeRate(): Promise<ExchangeRateResponse> {
+		const reqTime = formatRequestTime();
+		const hashValues = [reqTime, this.merchantId];
+		const hash = createHash(hashValues, this.apiKey);
+
+		const params: Record<string, string> = {
+			hash,
+			req_time: reqTime,
+			merchant_id: this.merchantId,
+		};
+
+		return this.request<ExchangeRateResponse>(
+			ENDPOINTS.exchangeRate,
+			params,
+			"json",
+		);
+	}
+
+	/**
+	 * Generate a QR code for payment via ABA KHQR, WeChat Pay, or Alipay.
+	 * @param options - QR generation options.
+	 * @throws {PayWayConfigError} If required options are missing or invalid.
+	 * @throws {PayWayAPIError} If the API returns a non-2xx response.
+	 */
+	async generateQR(options: GenerateQROptions): Promise<GenerateQRResponse> {
+		if (!options.transactionId) {
+			throw new PayWayConfigError("transactionId is required");
+		}
+		if (options.amount <= 0) {
+			throw new PayWayConfigError("amount must be greater than 0");
+		}
+		if (!options.paymentOption) {
+			throw new PayWayConfigError("paymentOption is required");
+		}
+		if (!options.qrImageTemplate) {
+			throw new PayWayConfigError("qrImageTemplate is required");
+		}
+		if (
+			options.lifetime !== undefined &&
+			(options.lifetime < 3 || options.lifetime > 43_200)
+		) {
+			throw new PayWayConfigError("lifetime must be between 3 and 43200");
+		}
+
+		const reqTime = formatRequestTime();
+		const currency = options.currency ?? "USD";
+		const amount = formatAmount(options.amount, currency);
+
+		// Base64-encode fields per ABA docs
+		const items = options.items ? toBase64(options.items) : "";
+		const callbackUrl = options.callbackUrl
+			? toBase64(options.callbackUrl)
+			: "";
+		const returnDeeplink = options.returnDeeplink
+			? toBase64(options.returnDeeplink)
+			: "";
+		const customFields = options.customFields
+			? toBase64(options.customFields)
+			: "";
+		const payout = options.payout ? toBase64(options.payout) : "";
+
+		// Hash field order follows doc parameter table order (excluding hash itself)
+		const hashValues = [
+			reqTime,
+			this.merchantId,
+			options.transactionId,
+			amount,
+			currency,
+			options.paymentOption,
+			options.lifetime?.toString() ?? "",
+			options.qrImageTemplate,
+			options.firstName ?? "",
+			options.lastName ?? "",
+			options.email ?? "",
+			options.phone ?? "",
+			options.purchaseType ?? "",
+			items,
+			callbackUrl,
+			returnDeeplink,
+			customFields,
+			options.returnParams ?? "",
+			payout,
+		];
+		const hash = createHash(hashValues, this.apiKey);
+
+		const params: Record<string, string | number | undefined> = {
+			hash,
+			req_time: reqTime,
+			merchant_id: this.merchantId,
+			tran_id: options.transactionId,
+			amount: options.amount,
+			currency,
+			payment_option: options.paymentOption,
+			lifetime: options.lifetime,
+			qr_image_template: options.qrImageTemplate,
+			first_name: options.firstName,
+			last_name: options.lastName,
+			email: options.email,
+			phone: options.phone,
+			purchase_type: options.purchaseType,
+			items: items || undefined,
+			callback_url: callbackUrl || undefined,
+			return_deeplink: returnDeeplink || undefined,
+			custom_fields: customFields || undefined,
+			return_params: options.returnParams,
+			payout: payout || undefined,
+		};
+
+		return this.request<GenerateQRResponse>(
+			ENDPOINTS.generateQR,
+			params,
+			"json",
+		);
+	}
+
+	/**
+	 * Get transactions by merchant reference. Returns up to the last 50 transactions.
+	 * @param merchantRef - Your merchant reference number.
+	 * @throws {PayWayAPIError} If the API returns a non-2xx response.
+	 */
+	async getTransactionsByRef(
+		merchantRef: string,
+	): Promise<GetTransactionsByRefResponse> {
+		if (!merchantRef) {
+			throw new PayWayConfigError("merchantRef is required");
+		}
+
+		const reqTime = formatRequestTime();
+		const hashValues = [reqTime, this.merchantId, merchantRef];
+		const hash = createHash(hashValues, this.apiKey);
+
+		const params: Record<string, string> = {
+			hash,
+			merchant_ref: merchantRef,
+			req_time: reqTime,
+			merchant_id: this.merchantId,
+		};
+
+		return this.request<GetTransactionsByRefResponse>(
+			ENDPOINTS.getTransactionsByRef,
+			params,
+			"json",
+		);
+	}
+
+	private async request<T>(
+		endpoint: (typeof ENDPOINTS)[keyof typeof ENDPOINTS],
+		params: Record<string, string | number | undefined>,
+		format: "form" | "json" = "form",
+	): Promise<T> {
+		const url = `${this.baseUrl}${endpoint}`;
+
+		let body: FormData | string;
+		const headers: Record<string, string> = {};
+
+		if (format === "json") {
+			const filtered: Record<string, string | number> = {};
+			for (const [key, value] of Object.entries(params)) {
+				if (value !== undefined && value !== "") {
+					filtered[key] = value;
+				}
+			}
+			body = JSON.stringify(filtered);
+			headers["Content-Type"] = "application/json";
+		} else {
+			body = buildFormData(params);
+		}
+
+		let response: Response;
+		try {
+			response = await fetch(url, {
+				method: "POST",
+				body,
+				headers,
+				signal: AbortSignal.timeout(this.timeout),
+			});
+		} catch (error) {
+			throw new PayWayError(
+				error instanceof Error ? error.message : "Network request failed",
+				{ cause: error },
+			);
+		}
 
 		if (!response.ok) {
 			const text = await response.text();
-			let body: unknown = text;
+			let responseBody: unknown = text;
 			try {
-				body = JSON.parse(text);
+				responseBody = JSON.parse(text);
 			} catch {
 				// keep as text
 			}
 			throw new PayWayAPIError(
 				`PayWay API error: ${response.status} ${response.statusText}`,
 				response.status,
-				body,
+				responseBody,
 			);
 		}
 

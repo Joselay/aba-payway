@@ -96,7 +96,7 @@ Check the status of a transaction.
 ```typescript
 const result = await payway.checkTransaction('order-001')
 console.log(result.status.code)          // '00' = success
-console.log(result.data.payment_status)  // 'APPROVED' | 'DECLINED' | 'PENDING' | ...
+console.log(result.data?.payment_status) // 'APPROVED' | 'DECLINED' | 'PENDING' | ...
 ```
 
 ### `payway.listTransactions(options?)`
@@ -105,8 +105,8 @@ List transactions with optional filters. Max 3-day date range.
 
 ```typescript
 const list = await payway.listTransactions({
-  fromDate: '2025-03-01 00:00:00',
-  toDate: '2025-03-03 23:59:59',
+  fromDate: '2026-03-01 00:00:00',
+  toDate: '2026-03-03 23:59:59',
   status: 'APPROVED',
   page: 1,
   pagination: 20,
@@ -122,6 +122,78 @@ const list = await payway.listTransactions({
 | `status` | `string` | Comma-separated: `APPROVED`, `DECLINED`, `PENDING`, `PRE-AUTH`, `CANCELLED`, `REFUNDED` |
 | `page` | `number` | Page number (default: `1`) |
 | `pagination` | `number` | Records per page (default: `40`, max: `1000`) |
+
+### `payway.getTransactionDetails(transactionId)`
+
+Get detailed information about a transaction, including its operation history.
+
+```typescript
+const details = await payway.getTransactionDetails('order-001')
+console.log(details.data?.payment_status)            // 'APPROVED'
+console.log(details.data?.transaction_operations)     // [{ status, amount, ... }]
+```
+
+### `payway.closeTransaction(transactionId)`
+
+Close (cancel) a pending transaction. The payment status becomes `CANCELLED`.
+
+```typescript
+const result = await payway.closeTransaction('order-001')
+console.log(result.status.code) // '00' = success
+```
+
+### `payway.getExchangeRate()`
+
+Fetch the latest exchange rates from ABA Bank for 12 currencies.
+
+```typescript
+const rates = await payway.getExchangeRate()
+console.log(rates.exchange_rates.eur) // { sell: '...', buy: '...' }
+```
+
+### `payway.generateQR(options)`
+
+Generate a dynamic QR code for payment via ABA KHQR, WeChat Pay, or Alipay.
+
+```typescript
+const qr = await payway.generateQR({
+  transactionId: 'qr-001',
+  amount: 10.00,
+  paymentOption: 'abapay_khqr',
+  qrImageTemplate: 'template1',
+  lifetime: 30,
+})
+console.log(qr.qrString)         // QR content string
+console.log(qr.abapay_deeplink)  // ABA Mobile deep link
+```
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `transactionId` | `string` | Yes | Unique transaction ID (max 20 chars) |
+| `amount` | `number` | Yes | Payment amount (min: 100 KHR or 0.01 USD) |
+| `paymentOption` | `QRPaymentOption` | Yes | `abapay_khqr`, `wechat` (USD only), `alipay` (USD only) |
+| `qrImageTemplate` | `string` | Yes | QR image template name |
+| `currency` | `'USD' \| 'KHR'` | No | Default: `'USD'` |
+| `lifetime` | `number` | No | Lifetime in minutes (3–43200) |
+| `firstName` | `string` | No | Payer's first name |
+| `lastName` | `string` | No | Payer's last name |
+| `email` | `string` | No | Payer's email |
+| `phone` | `string` | No | Payer's phone |
+| `purchaseType` | `'purchase' \| 'pre-auth'` | No | Default: `'purchase'` |
+| `items` | `string` | No | Item description (auto base64-encoded) |
+| `callbackUrl` | `string` | No | Payment callback URL (auto base64-encoded) |
+| `returnDeeplink` | `string` | No | Mobile deeplink (auto base64-encoded) |
+| `payout` | `string` | No | Payout JSON string (auto base64-encoded) |
+
+### `payway.getTransactionsByRef(merchantRef)`
+
+Get transactions by merchant reference. Returns up to the last 50 transactions.
+
+```typescript
+const txns = await payway.getTransactionsByRef('REF-001')
+for (const txn of txns.data) {
+  console.log(txn.transaction_id, txn.payment_status)
+}
 
 ## Error Handling
 

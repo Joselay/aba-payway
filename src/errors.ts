@@ -1,10 +1,12 @@
+/** Base error class for all PayWay SDK errors. */
 export class PayWayError extends Error {
-	constructor(message: string) {
-		super(message);
+	constructor(message: string, options?: ErrorOptions) {
+		super(message, options);
 		this.name = "PayWayError";
 	}
 }
 
+/** Thrown when the ABA PayWay API returns a non-2xx HTTP response. */
 export class PayWayAPIError extends PayWayError {
 	public readonly statusCode: number;
 	public readonly responseBody: unknown;
@@ -17,6 +19,7 @@ export class PayWayAPIError extends PayWayError {
 	}
 }
 
+/** Thrown when the SDK is constructed with missing or invalid configuration. */
 export class PayWayConfigError extends PayWayError {
 	constructor(message: string) {
 		super(message);
@@ -24,6 +27,7 @@ export class PayWayConfigError extends PayWayError {
 	}
 }
 
+/** Thrown when HMAC hash generation fails. */
 export class PayWayHashError extends PayWayError {
 	constructor(message: string) {
 		super(message);

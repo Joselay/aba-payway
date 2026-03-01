@@ -3,7 +3,7 @@ import { createHash } from "../src/hash.ts";
 
 describe("createHash", () => {
 	it("should generate a consistent HMAC-SHA512 base64 hash", () => {
-		const values = ["20240101120000", "merchant123", "order-001", "10.00"];
+		const values = ["20260101120000", "merchant123", "order-001", "10.00"];
 		const apiKey = "test-api-key";
 
 		const hash1 = createHash(values, apiKey);

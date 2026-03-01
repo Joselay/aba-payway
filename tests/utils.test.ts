@@ -8,21 +8,21 @@ import {
 
 describe("formatRequestTime", () => {
 	it("should format date as yyyyMMddHHmmss in UTC", () => {
-		const date = new Date(Date.UTC(2024, 0, 15, 9, 5, 30));
+		const date = new Date(Date.UTC(2026, 0, 15, 9, 5, 30));
 		const result = formatRequestTime(date);
-		expect(result).toBe("20240115090530");
+		expect(result).toBe("20260115090530");
 	});
 
 	it("should pad single-digit values with zeros", () => {
-		const date = new Date(Date.UTC(2024, 0, 1, 1, 2, 3));
+		const date = new Date(Date.UTC(2026, 0, 1, 1, 2, 3));
 		const result = formatRequestTime(date);
-		expect(result).toBe("20240101010203");
+		expect(result).toBe("20260101010203");
 	});
 
 	it("should handle end of year", () => {
-		const date = new Date(Date.UTC(2024, 11, 31, 23, 59, 59));
+		const date = new Date(Date.UTC(2026, 11, 31, 23, 59, 59));
 		const result = formatRequestTime(date);
-		expect(result).toBe("20241231235959");
+		expect(result).toBe("20261231235959");
 	});
 
 	it("should return 14 characters", () => {
