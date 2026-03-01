@@ -61,6 +61,8 @@ describe("PayWay", () => {
 			expect(params.additional_params).toBe("");
 			expect(params.google_pay_token).toBe("");
 			expect(params.skip_success_page).toBe("");
+			expect(params.view_type).toBe("");
+			expect(params.payment_gate).toBe("");
 		});
 
 		it("should base64-encode items when given as string", () => {
@@ -164,16 +166,23 @@ describe("PayWay", () => {
 		describe("checkTransaction", () => {
 			it("should send POST to check-transaction-2 endpoint", async () => {
 				const mockResponse = {
-					payment_status_code: 0,
-					total_amount: 10.0,
-					original_amount: 10.0,
-					refund_amount: 0,
-					discount_amount: 0,
-					payment_amount: 10.0,
-					payment_currency: "USD",
-					apv: "123456",
-					payment_status: "APPROVED",
-					transaction_date: "2024-01-15 10:30:00",
+					data: {
+						payment_status_code: 0,
+						total_amount: 10.0,
+						original_amount: 10.0,
+						refund_amount: 0,
+						discount_amount: 0,
+						payment_amount: 10.0,
+						payment_currency: "USD",
+						apv: "123456",
+						payment_status: "APPROVED",
+						transaction_date: "2024-01-15 10:30:00",
+					},
+					status: {
+						code: "00",
+						message: "Success!",
+						tran_id: "order-001",
+					},
 				};
 
 				fetchSpy.mockResolvedValueOnce(
@@ -193,16 +202,22 @@ describe("PayWay", () => {
 				expect(body.get("merchant_id")).toBe("test-merchant");
 				expect(body.get("hash")).toBeTruthy();
 
-				expect(result.payment_status_code).toBe(0);
-				expect(result.payment_status).toBe("APPROVED");
+				expect(result.data?.payment_status_code).toBe(0);
+				expect(result.data?.payment_status).toBe("APPROVED");
+				expect(result.status.code).toBe("00");
 			});
 		});
 
 		describe("listTransactions", () => {
 			it("should send POST to transaction-list-2 endpoint", async () => {
 				const mockResponse = {
-					status: { code: 0 },
-					data: { data: [], page: "1", pagination: "20" },
+					data: [],
+					page: "1",
+					pagination: "20",
+					status: {
+						code: "00",
+						message: "Success!",
+					},
 				};
 
 				fetchSpy.mockResolvedValueOnce(
@@ -226,15 +241,18 @@ describe("PayWay", () => {
 				expect(body.get("to_date")).toBe("2024-12-31");
 				expect(body.get("status")).toBe("APPROVED");
 
-				expect(result.data?.page).toBe("1");
+				expect(result.page).toBe("1");
+				expect(result.status.code).toBe("00");
 			});
 
 			it("should work with no options", async () => {
 				fetchSpy.mockResolvedValueOnce(
 					new Response(
 						JSON.stringify({
-							status: { code: 0 },
-							data: { data: [], page: "1", pagination: "20" },
+							data: [],
+							page: "1",
+							pagination: "20",
+							status: { code: "00" },
 						}),
 						{ status: 200 },
 					),

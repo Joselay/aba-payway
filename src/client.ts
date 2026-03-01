@@ -9,17 +9,12 @@ import type {
 	CheckoutParams,
 	CheckTransactionData,
 	CreateTransactionOptions,
-	ListTransactionsData,
 	ListTransactionsOptions,
+	ListTransactionsResponse,
 	PayWayConfig,
 	PayWayResponse,
 } from "./types.ts";
-import {
-	buildFormData,
-	formatAmount,
-	formatRequestTime,
-	toBase64,
-} from "./utils.ts";
+import { formatAmount, formatRequestTime, toBase64 } from "./utils.ts";
 
 export class PayWay {
 	private readonly merchantId: string;
@@ -88,6 +83,8 @@ export class PayWay {
 			currency,
 			options.customFields ?? "",
 			options.returnParams ?? "",
+			options.viewType ?? "",
+			options.paymentGate?.toString() ?? "",
 			options.payout ?? "",
 			options.lifetime?.toString() ?? "",
 			options.additionalParams ?? "",
@@ -124,10 +121,14 @@ export class PayWay {
 			additional_params: options.additionalParams ?? "",
 			google_pay_token: options.googlePayToken ?? "",
 			skip_success_page: options.skipSuccessPage ?? "",
+			view_type: options.viewType ?? "",
+			payment_gate: options.paymentGate?.toString() ?? "",
 		};
 	}
 
-	async checkTransaction(transactionId: string): Promise<CheckTransactionData> {
+	async checkTransaction(
+		transactionId: string,
+	): Promise<PayWayResponse<CheckTransactionData>> {
 		const reqTime = formatRequestTime();
 
 		const hashValues = [reqTime, this.merchantId, transactionId];
@@ -140,7 +141,7 @@ export class PayWay {
 			merchant_id: this.merchantId,
 		};
 
-		return this.request<CheckTransactionData>(
+		return this.request<PayWayResponse<CheckTransactionData>>(
 			ENDPOINTS.checkTransaction,
 			params,
 		);
@@ -148,7 +149,7 @@ export class PayWay {
 
 	async listTransactions(
 		options: ListTransactionsOptions = {},
-	): Promise<PayWayResponse<ListTransactionsData>> {
+	): Promise<ListTransactionsResponse> {
 		const reqTime = formatRequestTime();
 
 		const hashValues = [
@@ -177,7 +178,7 @@ export class PayWay {
 			merchant_id: this.merchantId,
 		};
 
-		return this.request<PayWayResponse<ListTransactionsData>>(
+		return this.request<ListTransactionsResponse>(
 			ENDPOINTS.transactionList,
 			params,
 		);
@@ -188,7 +189,12 @@ export class PayWay {
 		params: Record<string, string | undefined>,
 	): Promise<T> {
 		const url = `${this.baseUrl}${endpoint}`;
-		const formData = buildFormData(params);
+		const formData = new FormData();
+		for (const [key, value] of Object.entries(params)) {
+			if (value !== undefined && value !== null && value !== "") {
+				formData.append(key, value);
+			}
+		}
 
 		const response = await fetch(url, {
 			method: "POST",

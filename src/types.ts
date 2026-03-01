@@ -48,6 +48,8 @@ export interface CreateTransactionOptions {
 	additionalParams?: string;
 	googlePayToken?: string;
 	skipSuccessPage?: string;
+	viewType?: string;
+	paymentGate?: number;
 }
 
 export interface ItemEntry {
@@ -84,6 +86,8 @@ export interface CheckoutParams {
 	additional_params: string;
 	google_pay_token: string;
 	skip_success_page: string;
+	view_type: string;
+	payment_gate: string;
 }
 
 export interface CheckTransactionOptions {
@@ -95,7 +99,7 @@ export interface ListTransactionsOptions {
 	toDate?: string;
 	fromAmount?: number;
 	toAmount?: number;
-	status?: TransactionStatus;
+	status?: string;
 	page?: number;
 	pagination?: number;
 }
@@ -107,8 +111,9 @@ export interface PayWayResponse<T> {
 }
 
 export interface PayWayResponseStatus {
-	code: number;
+	code: string;
 	message?: string;
+	tran_id?: string;
 }
 
 export interface CheckTransactionData {
@@ -152,4 +157,11 @@ export interface ListTransactionsData {
 	data: TransactionListItem[];
 	page: string;
 	pagination: string;
+}
+
+export interface ListTransactionsResponse {
+	data: TransactionListItem[];
+	page: string;
+	pagination: string;
+	status: PayWayResponseStatus;
 }

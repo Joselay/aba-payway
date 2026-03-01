@@ -12,14 +12,15 @@ export {
 } from "./errors.ts";
 export { createHash } from "./hash.ts";
 export type {
+	CheckoutParams,
 	CheckTransactionData,
 	CheckTransactionOptions,
-	CheckoutParams,
 	CreateTransactionOptions,
 	Currency,
 	ItemEntry,
 	ListTransactionsData,
 	ListTransactionsOptions,
+	ListTransactionsResponse,
 	PaymentOption,
 	PayWayConfig,
 	PayWayResponse,

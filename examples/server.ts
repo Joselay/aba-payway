@@ -179,6 +179,7 @@ Bun.serve({
 			POST: async (req) => {
 				try {
 					const body = await req.json();
+					console.log("[create-transaction] Request body:", JSON.stringify(body, null, 2));
 
 					const params = payway.createTransaction({
 						transactionId: body.transactionId,
@@ -192,8 +193,10 @@ Bun.serve({
 						returnUrl: "http://localhost:3333/api/callback",
 					});
 
+					console.log("[create-transaction] Checkout params:", JSON.stringify(params, null, 2));
 					return Response.json(params);
 				} catch (err: unknown) {
+					console.error("[create-transaction] Error:", err);
 					const message =
 						err instanceof Error ? err.message : "Unknown error";
 					return Response.json({ error: message }, { status: 500 });
@@ -203,9 +206,16 @@ Bun.serve({
 		"/api/check-transaction/:tranId": {
 			GET: async (req) => {
 				try {
+					console.log("[check-transaction] tran_id:", req.params.tranId);
 					const result = await payway.checkTransaction(req.params.tranId);
+					console.log("[check-transaction] Response:", JSON.stringify(result, null, 2));
 					return Response.json(result);
 				} catch (err: unknown) {
+					if (err instanceof Error && "responseBody" in err) {
+						console.error("[check-transaction] Error:", err.message, "Body:", JSON.stringify((err as { responseBody: unknown }).responseBody, null, 2));
+					} else {
+						console.error("[check-transaction] Error:", err);
+					}
 					const message =
 						err instanceof Error ? err.message : "Unknown error";
 					return Response.json({ error: message }, { status: 500 });
@@ -216,15 +226,19 @@ Bun.serve({
 			GET: async (req) => {
 				try {
 					const url = new URL(req.url);
-					const result = await payway.listTransactions({
+					const options = {
 						fromDate: url.searchParams.get("from_date") ?? undefined,
 						toDate: url.searchParams.get("to_date") ?? undefined,
-						status: (url.searchParams.get("status") as import("../src/types.ts").TransactionStatus) ?? undefined,
+						status: url.searchParams.get("status") ?? undefined,
 						page: url.searchParams.has("page") ? Number(url.searchParams.get("page")) : undefined,
 						pagination: url.searchParams.has("pagination") ? Number(url.searchParams.get("pagination")) : undefined,
-					});
+					};
+					console.log("[transactions] Query options:", JSON.stringify(options, null, 2));
+					const result = await payway.listTransactions(options);
+					console.log("[transactions] Response:", JSON.stringify(result, null, 2));
 					return Response.json(result);
 				} catch (err: unknown) {
+					console.error("[transactions] Error:", err);
 					const message =
 						err instanceof Error ? err.message : "Unknown error";
 					return Response.json({ error: message }, { status: 500 });
@@ -235,7 +249,7 @@ Bun.serve({
 			POST: async (req) => {
 				const formData = await req.formData();
 				const data = Object.fromEntries(formData.entries());
-				console.log("Payment callback received:", data);
+				console.log("[callback] Payment callback received:", JSON.stringify(data, null, 2));
 				return Response.json({ received: true, data });
 			},
 		},
