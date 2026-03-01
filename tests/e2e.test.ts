@@ -52,7 +52,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const PROPAGATION_DELAY = 3000;
 
 describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
-	const client = new PayWay({ merchantId, apiKey });
+	// Lazy init — describe.skipIf still runs the callback body for registration,
+	// so we can't call `new PayWay()` at the top level when credentials are missing.
+	let client: PayWay;
+	function getClient() {
+		client ??= new PayWay({ merchantId, apiKey });
+		return client;
+	}
 
 	// ---------------------------------------------------------------
 	// Flow 1: Purchase lifecycle
@@ -62,7 +68,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		const tranId = `e2e-${Date.now()}`;
 
 		it("Step 1: create a transaction and sandbox accepts the hash", async () => {
-			const params = client.createTransaction({
+			const params = getClient().createTransaction({
 				transactionId: tranId,
 				amount: 1.0,
 				currency: "USD",
@@ -101,7 +107,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		});
 
 		it("Step 2: check transaction — should be PENDING", async () => {
-			const result = await client.checkTransaction(tranId);
+			const result = await getClient().checkTransaction(tranId);
 
 			expect(result.status.code).toBe("00");
 			expect(result.data).toBeDefined();
@@ -112,7 +118,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		});
 
 		it("Step 3: get transaction details — verify all fields", async () => {
-			const result = await client.getTransactionDetails(tranId);
+			const result = await getClient().getTransactionDetails(tranId);
 
 			expect(result.status.code).toBe("00");
 			expect(result.data).toBeDefined();
@@ -130,7 +136,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		});
 
 		it("Step 4: list transactions — our transaction should appear", async () => {
-			const result = await client.listTransactions();
+			const result = await getClient().listTransactions();
 
 			expect(result.status.code).toBe("00");
 			expect(result.data).toBeInstanceOf(Array);
@@ -143,7 +149,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		});
 
 		it("Step 5: close transaction — sandbox accepts the request", async () => {
-			const result = await client.closeTransaction(tranId);
+			const result = await getClient().closeTransaction(tranId);
 
 			expect(result.status.code).toBe("00");
 			// Note: sandbox acks the close but doesn't actually change
@@ -159,7 +165,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		const tranId = `qr-${Date.now()}`;
 
 		it("Step 1: generate QR code", async () => {
-			const result = await client.generateQR({
+			const result = await getClient().generateQR({
 				transactionId: tranId,
 				amount: 0.01,
 				currency: "USD",
@@ -185,7 +191,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		});
 
 		it("Step 2: check transaction — should be PENDING", async () => {
-			const result = await client.checkTransaction(tranId);
+			const result = await getClient().checkTransaction(tranId);
 
 			expect(result.status.code).toBe("00");
 			expect(result.data!.payment_status).toBe("PENDING");
@@ -193,7 +199,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		});
 
 		it("Step 3: get transaction details", async () => {
-			const result = await client.getTransactionDetails(tranId);
+			const result = await getClient().getTransactionDetails(tranId);
 
 			expect(result.status.code).toBe("00");
 			expect(result.data!.transaction_id).toBe(tranId);
@@ -203,7 +209,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 		});
 
 		it("Step 4: close transaction — sandbox accepts the request", async () => {
-			const result = await client.closeTransaction(tranId);
+			const result = await getClient().closeTransaction(tranId);
 
 			expect(result.status.code).toBe("00");
 		});
@@ -214,7 +220,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 	// ---------------------------------------------------------------
 	describe("Exchange rate", () => {
 		it("fetches rates successfully", async () => {
-			const result = await client.getExchangeRate();
+			const result = await getClient().getExchangeRate();
 
 			expect(result.status.code).toBe("00");
 			expect(result.exchange_rates).toBeDefined();
@@ -231,7 +237,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 			const fmt = (d: Date) =>
 				`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} 00:00:00`;
 
-			const result = await client.listTransactions({
+			const result = await getClient().listTransactions({
 				fromDate: fmt(yesterday),
 				toDate: fmt(now),
 			});
