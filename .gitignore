@@ -35,3 +35,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Local-only files
 *.local.md
+
+# API documentation (local-only, not published)
+/docs
