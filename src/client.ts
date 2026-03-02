@@ -10,18 +10,25 @@ import type {
 	CheckTransactionData,
 	CloseTransactionResponse,
 	CreateTransactionOptions,
+	ExchangeRateParams,
 	ExchangeRateResponse,
 	GenerateQROptions,
+	GenerateQRParams,
 	GenerateQRResponse,
+	GetTransactionsByRefParams,
 	GetTransactionsByRefResponse,
 	ListTransactionsOptions,
+	ListTransactionsParams,
 	ListTransactionsResponse,
 	PayWayConfig,
 	PayWayResponse,
+	RequestParams,
 	TransactionDetailData,
+	TransactionParams,
 } from "./types.ts";
 import {
 	buildFormData,
+	filterParams,
 	formatAmount,
 	formatRequestTime,
 	toBase64,
@@ -186,7 +193,7 @@ export class PayWay {
 		const hashValues = [reqTime, this.merchantId, transactionId];
 		const hash = createHash(hashValues, this.apiKey);
 
-		const params: Record<string, string | undefined> = {
+		const params: TransactionParams = {
 			hash,
 			tran_id: transactionId,
 			req_time: reqTime,
@@ -222,7 +229,7 @@ export class PayWay {
 		];
 		const hash = createHash(hashValues, this.apiKey);
 
-		const params: Record<string, string | undefined> = {
+		const params: ListTransactionsParams = {
 			hash,
 			from_date: options.fromDate,
 			to_date: options.toDate,
@@ -257,7 +264,7 @@ export class PayWay {
 		const hashValues = [reqTime, this.merchantId, transactionId];
 		const hash = createHash(hashValues, this.apiKey);
 
-		const params: Record<string, string> = {
+		const params: TransactionParams = {
 			hash,
 			tran_id: transactionId,
 			req_time: reqTime,
@@ -287,7 +294,7 @@ export class PayWay {
 		const hashValues = [reqTime, this.merchantId, transactionId];
 		const hash = createHash(hashValues, this.apiKey);
 
-		const params: Record<string, string> = {
+		const params: TransactionParams = {
 			hash,
 			tran_id: transactionId,
 			req_time: reqTime,
@@ -310,7 +317,7 @@ export class PayWay {
 		const hashValues = [reqTime, this.merchantId];
 		const hash = createHash(hashValues, this.apiKey);
 
-		const params: Record<string, string> = {
+		const params: ExchangeRateParams = {
 			hash,
 			req_time: reqTime,
 			merchant_id: this.merchantId,
@@ -390,7 +397,7 @@ export class PayWay {
 		];
 		const hash = createHash(hashValues, this.apiKey);
 
-		const params: Record<string, string | number | undefined> = {
+		const params: GenerateQRParams = {
 			hash,
 			req_time: reqTime,
 			merchant_id: this.merchantId,
@@ -436,7 +443,7 @@ export class PayWay {
 		const hashValues = [reqTime, this.merchantId, merchantRef];
 		const hash = createHash(hashValues, this.apiKey);
 
-		const params: Record<string, string> = {
+		const params: GetTransactionsByRefParams = {
 			hash,
 			merchant_ref: merchantRef,
 			req_time: reqTime,
@@ -452,7 +459,7 @@ export class PayWay {
 
 	private async request<T>(
 		endpoint: (typeof ENDPOINTS)[keyof typeof ENDPOINTS],
-		params: Record<string, string | number | undefined>,
+		params: RequestParams,
 		format: "form" | "json" = "form",
 	): Promise<T> {
 		const url = `${this.baseUrl}${endpoint}`;
@@ -461,13 +468,7 @@ export class PayWay {
 		const headers: Record<string, string> = {};
 
 		if (format === "json") {
-			const filtered: Record<string, string | number> = {};
-			for (const [key, value] of Object.entries(params)) {
-				if (value !== undefined && value !== "") {
-					filtered[key] = value;
-				}
-			}
-			body = JSON.stringify(filtered);
+			body = JSON.stringify(filterParams(params));
 			headers["Content-Type"] = "application/json";
 		} else {
 			body = buildFormData(params);

@@ -98,7 +98,7 @@ export interface ListTransactionsOptions {
 	fromAmount?: number;
 	toAmount?: number;
 	/** Single status or comma-separated: e.g. `"APPROVED"` or `"APPROVED,DECLINED"` */
-	status?: string;
+	status?: TransactionStatus | (string & {});
 	page?: number;
 	pagination?: number;
 }
@@ -222,7 +222,7 @@ export interface ExchangeRate {
 
 export interface ExchangeRateResponse {
 	status: PayWayResponseStatus;
-	exchange_rates: Record<ExchangeRateCurrency, ExchangeRate>;
+	exchange_rates: Partial<Record<ExchangeRateCurrency, ExchangeRate>>;
 }
 
 // --- Generate QR ---
@@ -252,7 +252,7 @@ export interface GenerateQROptions {
 export interface GenerateQRResponse {
 	status: PayWayResponseStatus & { trace_id?: string };
 	amount: number;
-	currency: string;
+	currency: Currency;
 	qrString: string;
 	qrImage: string;
 	abapay_deeplink: string;
@@ -286,3 +286,68 @@ export interface GetTransactionsByRefResponse {
 	data: TransactionByRefItem[];
 	status: PayWayResponseStatus;
 }
+
+// --- Internal endpoint request param interfaces ---
+
+export interface TransactionParams {
+	hash: string;
+	tran_id: string;
+	req_time: string;
+	merchant_id: string;
+}
+
+export interface ListTransactionsParams {
+	hash: string;
+	req_time: string;
+	merchant_id: string;
+	from_date?: string;
+	to_date?: string;
+	from_amount?: string;
+	to_amount?: string;
+	status?: string;
+	page?: string;
+	pagination?: string;
+}
+
+export interface ExchangeRateParams {
+	hash: string;
+	req_time: string;
+	merchant_id: string;
+}
+
+export interface GenerateQRParams {
+	hash: string;
+	req_time: string;
+	merchant_id: string;
+	tran_id: string;
+	amount: number;
+	currency: Currency;
+	payment_option: QRPaymentOption;
+	lifetime?: number;
+	qr_image_template: string;
+	first_name?: string;
+	last_name?: string;
+	email?: string;
+	phone?: string;
+	purchase_type?: TransactionType;
+	items?: string;
+	callback_url?: string;
+	return_deeplink?: string;
+	custom_fields?: string;
+	return_params?: string;
+	payout?: string;
+}
+
+export interface GetTransactionsByRefParams {
+	hash: string;
+	merchant_ref: string;
+	req_time: string;
+	merchant_id: string;
+}
+
+export type RequestParams =
+	| TransactionParams
+	| ListTransactionsParams
+	| ExchangeRateParams
+	| GenerateQRParams
+	| GetTransactionsByRefParams;

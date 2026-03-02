@@ -11,15 +11,22 @@ export function formatRequestTime(date: Date = new Date()): string {
 	return `${year}${month}${day}${hours}${minutes}${seconds}`;
 }
 
-/** Build a FormData object from a record, skipping `undefined`, `null`, and empty string values. */
-export function buildFormData(
-	params: Record<string, string | number | undefined>,
-): FormData {
-	const formData = new FormData();
+/** Filter out `undefined` and empty string values from a params object. */
+export function filterParams(params: object): Record<string, string | number> {
+	const out: Record<string, string | number> = {};
 	for (const [key, value] of Object.entries(params)) {
 		if (value !== undefined && value !== "") {
-			formData.append(key, String(value));
+			out[key] = value as string | number;
 		}
+	}
+	return out;
+}
+
+/** Build a FormData object from a record, skipping `undefined`, `null`, and empty string values. */
+export function buildFormData(params: object): FormData {
+	const formData = new FormData();
+	for (const [key, value] of Object.entries(filterParams(params))) {
+		formData.append(key, String(value));
 	}
 	return formData;
 }

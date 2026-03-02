@@ -7,6 +7,34 @@ import {
 	PayWayError,
 } from "../src/errors.ts";
 
+function getFetchCall(
+	spy: ReturnType<typeof vi.spyOn>,
+	index = 0,
+): { url: string; options: RequestInit } {
+	const call = spy.mock.calls[index];
+	if (!call)
+		throw new Error(
+			`Expected fetch call at index ${index}, but spy has ${spy.mock.calls.length} call(s)`,
+		);
+	return {
+		url: call[0] as string,
+		options: (call[1] ?? {}) as RequestInit,
+	};
+}
+
+function getFormBody(spy: ReturnType<typeof vi.spyOn>, index = 0): FormData {
+	const { options } = getFetchCall(spy, index);
+	return options.body as FormData;
+}
+
+function getJsonBody(
+	spy: ReturnType<typeof vi.spyOn>,
+	index = 0,
+): Record<string, unknown> {
+	const { options } = getFetchCall(spy, index);
+	return JSON.parse(options.body as string) as Record<string, unknown>;
+}
+
 describe("PayWay", () => {
 	describe("constructor", () => {
 		it("should create instance with valid config", () => {
@@ -323,13 +351,12 @@ describe("PayWay", () => {
 
 				const result = await client.checkTransaction("order-001");
 
-				const call = fetchSpy.mock.calls[0];
-				const [url] = call ?? [];
+				const { url } = getFetchCall(fetchSpy);
 				expect(url).toContain(
 					"/api/payment-gateway/v1/payments/check-transaction-2",
 				);
 
-				const body = call?.[1]?.body as FormData;
+				const body = getFormBody(fetchSpy);
 				expect(body.get("tran_id")).toBe("order-001");
 				expect(body.get("merchant_id")).toBe("test-merchant");
 				expect(body.get("hash")).toBeTruthy();
@@ -361,8 +388,7 @@ describe("PayWay", () => {
 					pagination: 50,
 				});
 
-				const call = fetchSpy.mock.calls[0];
-				const body = call?.[1]?.body as FormData;
+				const body = getFormBody(fetchSpy);
 				expect(body.get("from_amount")).toBe("10");
 				expect(body.get("to_amount")).toBe("100");
 				expect(body.get("page")).toBe("2");
@@ -390,13 +416,12 @@ describe("PayWay", () => {
 					status: "APPROVED",
 				});
 
-				const call = fetchSpy.mock.calls[0];
-				const [url] = call ?? [];
+				const { url } = getFetchCall(fetchSpy);
 				expect(url).toContain(
 					"/api/payment-gateway/v1/payments/transaction-list-2",
 				);
 
-				const body = call?.[1]?.body as FormData;
+				const body = getFormBody(fetchSpy);
 				expect(body.get("from_date")).toBe("2026-01-01");
 				expect(body.get("to_date")).toBe("2026-12-31");
 				expect(body.get("status")).toBe("APPROVED");
@@ -466,18 +491,17 @@ describe("PayWay", () => {
 
 				const result = await client.getTransactionDetails("order-001");
 
-				const call = fetchSpy.mock.calls[0];
-				const [url, options] = call ?? [];
+				const { url, options } = getFetchCall(fetchSpy);
 				expect(url).toContain(
 					"/api/payment-gateway/v1/payments/transaction-detail",
 				);
 
 				// Verify JSON content type
-				const headers = options?.headers as Record<string, string>;
+				const headers = options.headers as Record<string, string>;
 				expect(headers["Content-Type"]).toBe("application/json");
 
 				// Verify JSON body
-				const body = JSON.parse(options?.body as string);
+				const body = getJsonBody(fetchSpy);
 				expect(body.tran_id).toBe("order-001");
 				expect(body.merchant_id).toBe("test-merchant");
 				expect(body.hash).toBeTruthy();
@@ -511,16 +535,15 @@ describe("PayWay", () => {
 
 				const result = await client.closeTransaction("order-001");
 
-				const call = fetchSpy.mock.calls[0];
-				const [url, options] = call ?? [];
+				const { url, options } = getFetchCall(fetchSpy);
 				expect(url).toContain(
 					"/api/payment-gateway/v1/payments/close-transaction",
 				);
 
-				const headers = options?.headers as Record<string, string>;
+				const headers = options.headers as Record<string, string>;
 				expect(headers["Content-Type"]).toBe("application/json");
 
-				const body = JSON.parse(options?.body as string);
+				const body = getJsonBody(fetchSpy);
 				expect(body.tran_id).toBe("order-001");
 				expect(body.merchant_id).toBe("test-merchant");
 				expect(body.hash).toBeTruthy();
@@ -552,20 +575,19 @@ describe("PayWay", () => {
 
 				const result = await client.getExchangeRate();
 
-				const call = fetchSpy.mock.calls[0];
-				const [url, options] = call ?? [];
+				const { url, options } = getFetchCall(fetchSpy);
 				expect(url).toContain("/api/payment-gateway/v1/exchange-rate");
 
-				const headers = options?.headers as Record<string, string>;
+				const headers = options.headers as Record<string, string>;
 				expect(headers["Content-Type"]).toBe("application/json");
 
-				const body = JSON.parse(options?.body as string);
+				const body = getJsonBody(fetchSpy);
 				expect(body.merchant_id).toBe("test-merchant");
 				expect(body.hash).toBeTruthy();
 				expect(body.req_time).toBeTruthy();
 
 				expect(result.status.code).toBe("00");
-				expect(result.exchange_rates.aud.sell).toBe("2700");
+				expect(result.exchange_rates.aud?.sell).toBe("2700");
 			});
 		});
 
@@ -594,14 +616,13 @@ describe("PayWay", () => {
 					lifetime: 30,
 				});
 
-				const call = fetchSpy.mock.calls[0];
-				const [url, options] = call ?? [];
+				const { url, options } = getFetchCall(fetchSpy);
 				expect(url).toContain("/api/payment-gateway/v1/payments/generate-qr");
 
-				const headers = options?.headers as Record<string, string>;
+				const headers = options.headers as Record<string, string>;
 				expect(headers["Content-Type"]).toBe("application/json");
 
-				const body = JSON.parse(options?.body as string);
+				const body = getJsonBody(fetchSpy);
 				expect(body.tran_id).toBe("qr-001");
 				expect(body.amount).toBe(10);
 				expect(body.payment_option).toBe("abapay_khqr");
@@ -641,7 +662,8 @@ describe("PayWay", () => {
 					client.generateQR({
 						transactionId: "qr-001",
 						amount: 10,
-						paymentOption: "" as "abapay_khqr",
+						// @ts-expect-error testing empty string validation
+						paymentOption: "",
 						qrImageTemplate: "template1",
 					}),
 				).rejects.toThrow("paymentOption is required");
@@ -709,20 +731,21 @@ describe("PayWay", () => {
 					payout: '{"account":"123"}',
 				});
 
-				const call = fetchSpy.mock.calls[0];
-				const body = JSON.parse(call?.[1]?.body as string);
+				const body = getJsonBody(fetchSpy);
 
-				expect(Buffer.from(body.items, "base64").toString()).toBe("Test Item");
-				expect(Buffer.from(body.callback_url, "base64").toString()).toBe(
-					"https://example.com/callback",
+				expect(Buffer.from(body.items as string, "base64").toString()).toBe(
+					"Test Item",
 				);
-				expect(Buffer.from(body.return_deeplink, "base64").toString()).toBe(
-					"myapp://callback",
-				);
-				expect(Buffer.from(body.custom_fields, "base64").toString()).toBe(
-					"custom-data",
-				);
-				expect(Buffer.from(body.payout, "base64").toString()).toBe(
+				expect(
+					Buffer.from(body.callback_url as string, "base64").toString(),
+				).toBe("https://example.com/callback");
+				expect(
+					Buffer.from(body.return_deeplink as string, "base64").toString(),
+				).toBe("myapp://callback");
+				expect(
+					Buffer.from(body.custom_fields as string, "base64").toString(),
+				).toBe("custom-data");
+				expect(Buffer.from(body.payout as string, "base64").toString()).toBe(
 					'{"account":"123"}',
 				);
 			});
@@ -761,16 +784,15 @@ describe("PayWay", () => {
 
 				const result = await client.getTransactionsByRef("REF-001");
 
-				const call = fetchSpy.mock.calls[0];
-				const [url, options] = call ?? [];
+				const { url, options } = getFetchCall(fetchSpy);
 				expect(url).toContain(
 					"/api/payment-gateway/v1/payments/get-transactions-by-mc-ref",
 				);
 
-				const headers = options?.headers as Record<string, string>;
+				const headers = options.headers as Record<string, string>;
 				expect(headers["Content-Type"]).toBe("application/json");
 
-				const body = JSON.parse(options?.body as string);
+				const body = getJsonBody(fetchSpy);
 				expect(body.merchant_ref).toBe("REF-001");
 				expect(body.merchant_id).toBe("test-merchant");
 				expect(body.hash).toBeTruthy();
@@ -795,9 +817,10 @@ describe("PayWay", () => {
 					await client.checkTransaction("order-001");
 					expect.unreachable("Should have thrown");
 				} catch (error) {
-					expect(error).toBeInstanceOf(PayWayError);
-					expect((error as PayWayError).message).toBe("fetch failed");
-					expect((error as PayWayError).cause).toBeInstanceOf(TypeError);
+					if (!(error instanceof PayWayError))
+						expect.unreachable("Expected PayWayError");
+					expect(error.message).toBe("fetch failed");
+					expect(error.cause).toBeInstanceOf(TypeError);
 				}
 			});
 
@@ -820,9 +843,8 @@ describe("PayWay", () => {
 
 				await customClient.checkTransaction("t1");
 
-				const call = fetchSpy.mock.calls[0];
-				const signal = call?.[1]?.signal as AbortSignal;
-				expect(signal).toBeTruthy();
+				const { options } = getFetchCall(fetchSpy);
+				expect(options.signal).toBeTruthy();
 			});
 		});
 
@@ -849,8 +871,9 @@ describe("PayWay", () => {
 					await client.checkTransaction("order-001");
 					expect.unreachable("Should have thrown");
 				} catch (error) {
-					expect(error).toBeInstanceOf(PayWayAPIError);
-					expect((error as PayWayAPIError).responseBody).toEqual(errorBody);
+					if (!(error instanceof PayWayAPIError))
+						expect.unreachable("Expected PayWayAPIError");
+					expect(error.responseBody).toEqual(errorBody);
 				}
 			});
 
@@ -863,10 +886,9 @@ describe("PayWay", () => {
 					await client.checkTransaction("order-001");
 					expect.unreachable("Should have thrown");
 				} catch (error) {
-					expect(error).toBeInstanceOf(PayWayAPIError);
-					expect((error as PayWayAPIError).responseBody).toBe(
-						"Gateway Timeout",
-					);
+					if (!(error instanceof PayWayAPIError))
+						expect.unreachable("Expected PayWayAPIError");
+					expect(error.responseBody).toBe("Gateway Timeout");
 				}
 			});
 
@@ -879,8 +901,9 @@ describe("PayWay", () => {
 					await client.checkTransaction("order-001");
 					expect.unreachable("Should have thrown");
 				} catch (error) {
-					expect(error).toBeInstanceOf(PayWayAPIError);
-					expect((error as PayWayAPIError).statusCode).toBe(500);
+					if (!(error instanceof PayWayAPIError))
+						expect.unreachable("Expected PayWayAPIError");
+					expect(error.statusCode).toBe(500);
 				}
 			});
 		});
