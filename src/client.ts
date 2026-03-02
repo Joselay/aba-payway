@@ -1,8 +1,4 @@
-import {
-	ENDPOINTS,
-	PRODUCTION_BASE_URL,
-	SANDBOX_BASE_URL,
-} from "./constants.ts";
+import { BASE_URLS, ENDPOINTS } from "./constants.ts";
 import { PayWayAPIError, PayWayConfigError, PayWayError } from "./errors.ts";
 import { createHash } from "./hash.ts";
 import type {
@@ -58,7 +54,7 @@ export class PayWay {
 
 		this.merchantId = config.merchantId;
 		this.apiKey = config.apiKey;
-		this.baseUrl = config.production ? PRODUCTION_BASE_URL : SANDBOX_BASE_URL;
+		this.baseUrl = config.baseUrl ?? BASE_URLS[config.environment ?? "sandbox"];
 		this.timeout = config.timeout ?? 30_000;
 	}
 

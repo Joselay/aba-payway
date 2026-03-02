@@ -1,7 +1,12 @@
+export type Environment = "sandbox" | "production";
+
 export interface PayWayConfig {
 	readonly merchantId: string;
 	readonly apiKey: string;
-	readonly production?: boolean;
+	/** Target environment. Default: `"sandbox"`. */
+	readonly environment?: Environment;
+	/** Override the base URL directly. Takes priority over `environment`. */
+	readonly baseUrl?: string;
 	/** Request timeout in milliseconds. Default: 30000 (30s). */
 	readonly timeout?: number;
 }

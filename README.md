@@ -56,7 +56,8 @@ const params = payway.createTransaction({
 |---|---|---|---|---|
 | `merchantId` | `string` | Yes | — | Your ABA PayWay merchant ID |
 | `apiKey` | `string` | Yes | — | Your ABA PayWay API key |
-| `production` | `boolean` | No | `false` | Use production environment |
+| `environment` | `'sandbox' \| 'production'` | No | `'sandbox'` | Target environment |
+| `baseUrl` | `string` | No | — | Override the base URL directly (takes priority over `environment`) |
 
 ### `payway.createTransaction(options)`
 
@@ -219,7 +220,7 @@ import { PayWay } from 'aba-payway'
 const payway = new PayWay({
   merchantId: process.env.PAYWAY_MERCHANT_ID!,
   apiKey: process.env.PAYWAY_API_KEY!,
-  production: process.env.NODE_ENV === 'production',
+  environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
 })
 
 export async function POST(request: Request) {

@@ -1,5 +1,12 @@
-export const SANDBOX_BASE_URL = "https://checkout-sandbox.payway.com.kh";
-export const PRODUCTION_BASE_URL = "https://checkout.payway.com.kh";
+import type { Environment } from "./types.ts";
+
+export const BASE_URLS: Record<Environment, string> = {
+	sandbox: "https://checkout-sandbox.payway.com.kh",
+	production: "https://checkout.payway.com.kh",
+};
+
+export const SANDBOX_BASE_URL = BASE_URLS.sandbox;
+export const PRODUCTION_BASE_URL = BASE_URLS.production;
 
 export const ENDPOINTS = {
 	purchase: "/api/payment-gateway/v1/payments/purchase",

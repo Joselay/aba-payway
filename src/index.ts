@@ -1,5 +1,6 @@
 export { PayWay } from "./client.ts";
 export {
+	BASE_URLS,
 	ENDPOINTS,
 	PRODUCTION_BASE_URL,
 	SANDBOX_BASE_URL,
@@ -17,6 +18,7 @@ export type {
 	CloseTransactionResponse,
 	CreateTransactionOptions,
 	Currency,
+	Environment,
 	ExchangeRate,
 	ExchangeRateCurrency,
 	ExchangeRateResponse,

@@ -285,11 +285,11 @@ describe("PayWay", () => {
 			expect(params.type).toBe("pre-auth");
 		});
 
-		it("should use production URL when production is true", () => {
+		it("should use production URL when environment is 'production'", () => {
 			const client = new PayWay({
 				merchantId: "m",
 				apiKey: "k",
-				production: true,
+				environment: "production",
 			});
 
 			const params = client.createTransaction({
@@ -298,6 +298,52 @@ describe("PayWay", () => {
 			});
 
 			expect(params.action).toContain(PRODUCTION_BASE_URL);
+		});
+
+		it("should default to sandbox when environment is omitted", () => {
+			const client = new PayWay({
+				merchantId: "m",
+				apiKey: "k",
+			});
+
+			const params = client.createTransaction({
+				transactionId: "t1",
+				amount: 1,
+			});
+
+			expect(params.action).toContain(SANDBOX_BASE_URL);
+		});
+
+		it("should use baseUrl override when provided", () => {
+			const client = new PayWay({
+				merchantId: "m",
+				apiKey: "k",
+				baseUrl: "https://custom.example.com",
+			});
+
+			const params = client.createTransaction({
+				transactionId: "t1",
+				amount: 1,
+			});
+
+			expect(params.action).toContain("https://custom.example.com");
+		});
+
+		it("should prefer baseUrl over environment", () => {
+			const client = new PayWay({
+				merchantId: "m",
+				apiKey: "k",
+				environment: "production",
+				baseUrl: "https://custom.example.com",
+			});
+
+			const params = client.createTransaction({
+				transactionId: "t1",
+				amount: 1,
+			});
+
+			expect(params.action).toContain("https://custom.example.com");
+			expect(params.action).not.toContain(PRODUCTION_BASE_URL);
 		});
 	});
 
