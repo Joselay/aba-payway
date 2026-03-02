@@ -1,5 +1,11 @@
 # aba-payway
 
+[![npm version](https://img.shields.io/npm/v/aba-payway)](https://www.npmjs.com/package/aba-payway)
+[![CI](https://github.com/Joselay/aba-payway/actions/workflows/ci.yml/badge.svg)](https://github.com/Joselay/aba-payway/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![npm downloads](https://img.shields.io/npm/dm/aba-payway)](https://www.npmjs.com/package/aba-payway)
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](https://www.npmjs.com/package/aba-payway)
+
 Type-safe TypeScript SDK for [ABA PayWay](https://www.payway.com.kh/) — Cambodia's #1 payment gateway.
 
 > **Unofficial community SDK.** Not affiliated with ABA Bank.

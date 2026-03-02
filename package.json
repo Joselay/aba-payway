@@ -33,11 +33,19 @@
 	"keywords": [
 		"aba",
 		"payway",
+		"aba-payway",
 		"cambodia",
 		"payment",
 		"payment-gateway",
 		"typescript",
-		"sdk"
+		"sdk",
+		"khqr",
+		"qr-payment",
+		"checkout",
+		"aba-bank",
+		"nodejs",
+		"fintech",
+		"cambodia-payment"
 	],
 	"engines": {
 		"node": ">=18.0.0"
