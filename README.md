@@ -281,6 +281,18 @@ app.post('/pay', (req, res) => {
 
 For the full ABA PayWay API documentation, see [aba-payway-docs](https://github.com/Joselay/aba-payway-docs).
 
+## Contributing
+
+Found a bug or have a feature request? [Open an issue](https://github.com/Joselay/aba-payway/issues) — all feedback is welcome.
+
+Pull requests are also welcome. Please make sure tests pass before submitting:
+
+```bash
+bun run test
+bun run typecheck
+bun run lint
+```
+
 ## License
 
 MIT
