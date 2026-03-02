@@ -294,17 +294,17 @@ export interface GetTransactionsByRefResponse {
 
 // --- Internal endpoint request param interfaces ---
 
-export interface TransactionParams {
+interface BaseRequestParams {
 	hash: string;
-	tran_id: string;
 	req_time: string;
 	merchant_id: string;
 }
 
-export interface ListTransactionsParams {
-	hash: string;
-	req_time: string;
-	merchant_id: string;
+export interface TransactionParams extends BaseRequestParams {
+	tran_id: string;
+}
+
+export interface ListTransactionsParams extends BaseRequestParams {
 	from_date?: string;
 	to_date?: string;
 	from_amount?: string;
@@ -314,16 +314,9 @@ export interface ListTransactionsParams {
 	pagination?: string;
 }
 
-export interface ExchangeRateParams {
-	hash: string;
-	req_time: string;
-	merchant_id: string;
-}
+export interface ExchangeRateParams extends BaseRequestParams {}
 
-export interface GenerateQRParams {
-	hash: string;
-	req_time: string;
-	merchant_id: string;
+export interface GenerateQRParams extends BaseRequestParams {
 	tran_id: string;
 	amount: number;
 	currency: Currency;
@@ -343,11 +336,8 @@ export interface GenerateQRParams {
 	payout?: string;
 }
 
-export interface GetTransactionsByRefParams {
-	hash: string;
+export interface GetTransactionsByRefParams extends BaseRequestParams {
 	merchant_ref: string;
-	req_time: string;
-	merchant_id: string;
 }
 
 export type RequestParams =

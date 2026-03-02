@@ -17,6 +17,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PayWay } from "../src/client.ts";
+import { buildFormData } from "../src/utils.ts";
 
 // Load .env manually since vitest v4 doesn't auto-load it
 function loadEnvFile() {
@@ -83,15 +84,10 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 			expect(params.merchant_id).toBe(merchantId);
 
 			// POST to sandbox — proves the hash is correct
-			const formData = new FormData();
-			for (const [key, value] of Object.entries(params)) {
-				if (key === "action") continue;
-				if (value !== undefined && value !== "")
-					formData.append(key, String(value));
-			}
-			const resp = await fetch(params.action, {
+			const { action, ...formFields } = params;
+			const resp = await fetch(action, {
 				method: "POST",
-				body: formData,
+				body: buildFormData(formFields),
 			});
 			const body = await resp.json();
 
