@@ -45,7 +45,11 @@
 		"aba-bank",
 		"nodejs",
 		"fintech",
-		"cambodia-payment"
+		"cambodia-payment",
+		"bun",
+		"deno",
+		"esm",
+		"cloudflare-workers"
 	],
 	"engines": {
 		"node": ">=18.0.0"

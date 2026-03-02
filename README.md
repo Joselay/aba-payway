@@ -10,13 +10,27 @@ Type-safe TypeScript SDK for [ABA PayWay](https://www.payway.com.kh/) — Cambod
 
 > **Unofficial community SDK.** Not affiliated with ABA Bank.
 
+## Why aba-payway?
+
+ABA PayWay's official SDK is a raw REST API with no official Node.js/TypeScript client. That means you're left dealing with manual HMAC hashing, snake_case field ordering, base64 encoding, and zero type safety. This SDK handles all of that for you.
+
+| | `aba-payway` | Rolling your own |
+|---|---|---|
+| Type safety | Full TypeScript with strict types | None — guess the field names |
+| Hash computation | Automatic, correct field ordering | Manual HMAC-SHA512, easy to get wrong |
+| Base64 encoding | Automatic for items, URLs, payout | Do it yourself, hope you didn't miss one |
+| Dependencies | **Zero** — only Node.js built-ins | Probably `axios` + `crypto-js` + glue code |
+| API coverage | 15+ methods | Build each one from scratch |
+| Runtime support | Node.js, Bun, Deno, Cloudflare Workers | Whatever you tested |
+
 ## Features
 
-- Zero runtime dependencies — uses Node.js built-in `crypto` and native `fetch`
-- Full TypeScript support with strict types
-- Dual ESM + CJS output
-- Simple, clean API with camelCase interface
-- Works with Node.js, Bun, Next.js, Express, Hono, and any JS runtime with `fetch`
+- **Zero runtime dependencies** — uses Node.js built-in `crypto` and native `fetch`
+- **Full TypeScript support** with strict types and autocomplete
+- **Dual ESM + CJS output** — works everywhere
+- **15+ API methods** — checkout, QR payments, refunds, pre-auth, payouts, and more
+- **Runs anywhere** — Node.js, Bun, Deno, Next.js, Express, Hono, Cloudflare Workers
+- **Tested against ABA's sandbox** — not just unit tests, real API integration tests
 
 ## Installation
 
