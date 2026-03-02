@@ -1,0 +1,5 @@
+{
+	"name": "aba-payway-nextjs-example",
+	"private": true,
+	"description": "Copy route.ts into your Next.js project at app/api/checkout/route.ts"
+}

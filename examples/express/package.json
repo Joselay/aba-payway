@@ -1,0 +1,16 @@
+{
+	"name": "aba-payway-express-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"start": "tsx server.ts"
+	},
+	"dependencies": {
+		"aba-payway": "latest",
+		"express": "^5.2.1"
+	},
+	"devDependencies": {
+		"@types/express": "^5.0.6",
+		"tsx": "^4.21.0"
+	}
+}

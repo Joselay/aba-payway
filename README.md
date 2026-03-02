@@ -65,7 +65,7 @@ const params = payway.createTransaction({
 
 // Send `params` to your frontend, populate ABA's hidden form,
 // and call AbaPayway.checkout() to open the payment dialog.
-// See examples/server.ts for a complete working example.
+// See examples/ for more snippets and framework integrations.
 ```
 
 ## API Reference

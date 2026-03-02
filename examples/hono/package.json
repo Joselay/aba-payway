@@ -1,0 +1,16 @@
+{
+	"name": "aba-payway-hono-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"start": "tsx server.ts"
+	},
+	"dependencies": {
+		"aba-payway": "latest",
+		"hono": "^4.12.3",
+		"@hono/node-server": "^1.19.9"
+	},
+	"devDependencies": {
+		"tsx": "^4.21.0"
+	}
+}

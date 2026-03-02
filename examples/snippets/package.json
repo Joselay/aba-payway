@@ -1,0 +1,24 @@
+{
+	"name": "aba-payway-snippets",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"create-transaction": "tsx create-transaction.ts",
+		"check-transaction": "tsx check-transaction.ts",
+		"list-transactions": "tsx list-transactions.ts",
+		"transaction-details": "tsx transaction-details.ts",
+		"close-transaction": "tsx close-transaction.ts",
+		"exchange-rate": "tsx exchange-rate.ts",
+		"generate-qr": "tsx generate-qr.ts",
+		"transactions-by-ref": "tsx transactions-by-ref.ts",
+		"error-handling": "tsx error-handling.ts",
+		"items-array": "tsx items-array.ts",
+		"pre-auth-flow": "tsx pre-auth-flow.ts"
+	},
+	"dependencies": {
+		"aba-payway": "latest"
+	},
+	"devDependencies": {
+		"tsx": "^4.21.0"
+	}
+}
