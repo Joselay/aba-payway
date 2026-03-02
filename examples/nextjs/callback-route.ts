@@ -51,6 +51,8 @@ export async function POST(request: Request) {
 	} catch (err) {
 		if (err instanceof PayWayAPIError) {
 			console.error("Verification failed:", err.statusCode, err.responseBody);
+		} else {
+			console.error("Verification failed:", err);
 		}
 		return Response.json({ error: "Verification failed" }, { status: 500 });
 	}

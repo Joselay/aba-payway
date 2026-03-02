@@ -77,6 +77,8 @@ app.post("/api/callback", async (c) => {
 	} catch (err) {
 		if (err instanceof PayWayAPIError) {
 			console.error("Verification failed:", err.statusCode, err.responseBody);
+		} else {
+			console.error("Verification failed:", err);
 		}
 		return c.json({ error: "Verification failed" }, 500);
 	}
