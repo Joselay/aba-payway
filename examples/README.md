@@ -65,7 +65,12 @@ Endpoints: `POST /api/checkout` · `POST /api/callback` · `GET /api/status/:id`
 
 ### Next.js
 
-Copy [`nextjs/route.ts`](nextjs/route.ts) into your Next.js project at `app/api/checkout/route.ts`. See the file header for setup instructions.
+Copy the route files into your Next.js project:
+
+- [`nextjs/route.ts`](nextjs/route.ts) → `app/api/checkout/route.ts`
+- [`nextjs/callback-route.ts`](nextjs/callback-route.ts) → `app/api/callback/route.ts`
+
+See the file headers for setup instructions.
 
 ## Sandbox
 

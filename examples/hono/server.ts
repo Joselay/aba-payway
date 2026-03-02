@@ -72,7 +72,7 @@ app.get("/api/status/:id", async (c) => {
 		if (err instanceof PayWayAPIError) {
 			return c.json(
 				{ error: err.message, body: err.responseBody },
-				err.statusCode as 500,
+				{ status: err.statusCode },
 			);
 		}
 		const message = err instanceof Error ? err.message : "Unknown error";
