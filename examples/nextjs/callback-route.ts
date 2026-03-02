@@ -30,7 +30,11 @@ const payway = new PayWay({
 export async function POST(request: Request) {
 	const formData = await request.formData();
 	const data = Object.fromEntries(formData.entries());
-	const transactionId = data.tran_id as string;
+	const transactionId = data.tran_id;
+
+	if (typeof transactionId !== "string" || !transactionId) {
+		return Response.json({ error: "Missing tran_id" }, { status: 400 });
+	}
 
 	// Verify the transaction server-side
 	try {

@@ -59,8 +59,27 @@ app.post("/api/checkout", async (c) => {
 // ABA sends a POST here after payment completes
 app.post("/api/callback", async (c) => {
 	const body = await c.req.parseBody();
-	console.log("Payment callback:", body);
-	return c.json({ received: true });
+	const transactionId = body.tran_id;
+
+	if (typeof transactionId !== "string" || !transactionId) {
+		return c.json({ error: "Missing tran_id" }, 400);
+	}
+
+	// Always verify the transaction server-side
+	try {
+		const result = await payway.checkTransaction(transactionId);
+		console.log("Payment verified:", result.data?.payment_status);
+
+		// Update your order in the database
+		// await db.orders.update({ transactionId, status: result.data?.payment_status })
+
+		return c.json({ received: true, status: result.data?.payment_status });
+	} catch (err) {
+		if (err instanceof PayWayAPIError) {
+			console.error("Verification failed:", err.statusCode, err.responseBody);
+		}
+		return c.json({ error: "Verification failed" }, 500);
+	}
 });
 
 // Check transaction status
@@ -70,10 +89,8 @@ app.get("/api/status/:id", async (c) => {
 		return c.json(result);
 	} catch (err) {
 		if (err instanceof PayWayAPIError) {
-			return c.json(
-				{ error: err.message, body: err.responseBody },
-				{ status: err.statusCode },
-			);
+			console.error(`API error (${err.statusCode}):`, err.responseBody);
+			return c.json({ error: err.message }, 502);
 		}
 		const message = err instanceof Error ? err.message : "Unknown error";
 		return c.json({ error: message }, 500);

@@ -1,4 +1,4 @@
-import { PayWay } from "../src/index.ts";
+import { PayWay, PayWayAPIError } from "../src/index.ts";
 
 const merchantId = process.env.ABA_PAYWAY_MERCHANT_ID;
 const apiKey = process.env.ABA_PAYWAY_API_KEY;
@@ -225,16 +225,12 @@ Bun.serve({
 					);
 					return Response.json(result);
 				} catch (err: unknown) {
-					if (err instanceof Error && "responseBody" in err) {
+					if (err instanceof PayWayAPIError) {
 						console.error(
 							"[check-transaction] Error:",
 							err.message,
 							"Body:",
-							JSON.stringify(
-								(err as { responseBody: unknown }).responseBody,
-								null,
-								2,
-							),
+							JSON.stringify(err.responseBody, null, 2),
 						);
 					} else {
 						console.error("[check-transaction] Error:", err);
