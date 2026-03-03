@@ -22,11 +22,6 @@ function getFetchCall(
 	};
 }
 
-function getFormBody(spy: ReturnType<typeof vi.spyOn>, index = 0): FormData {
-	const { options } = getFetchCall(spy, index);
-	return options.body as FormData;
-}
-
 function getJsonBody(
 	spy: ReturnType<typeof vi.spyOn>,
 	index = 0,
@@ -397,15 +392,18 @@ describe("PayWay", () => {
 
 				const result = await client.checkTransaction("order-001");
 
-				const { url } = getFetchCall(fetchSpy);
+				const { url, options } = getFetchCall(fetchSpy);
 				expect(url).toContain(
 					"/api/payment-gateway/v1/payments/check-transaction-2",
 				);
 
-				const body = getFormBody(fetchSpy);
-				expect(body.get("tran_id")).toBe("order-001");
-				expect(body.get("merchant_id")).toBe("test-merchant");
-				expect(body.get("hash")).toBeTruthy();
+				const headers = options.headers as Record<string, string>;
+				expect(headers["Content-Type"]).toBe("application/json");
+
+				const body = getJsonBody(fetchSpy);
+				expect(body.tran_id).toBe("order-001");
+				expect(body.merchant_id).toBe("test-merchant");
+				expect(body.hash).toBeTruthy();
 
 				expect(result.data?.payment_status_code).toBe(0);
 				expect(result.data?.payment_status).toBe("APPROVED");
@@ -434,11 +432,11 @@ describe("PayWay", () => {
 					pagination: 50,
 				});
 
-				const body = getFormBody(fetchSpy);
-				expect(body.get("from_amount")).toBe("10");
-				expect(body.get("to_amount")).toBe("100");
-				expect(body.get("page")).toBe("2");
-				expect(body.get("pagination")).toBe("50");
+				const body = getJsonBody(fetchSpy);
+				expect(body.from_amount).toBe("10");
+				expect(body.to_amount).toBe("100");
+				expect(body.page).toBe("2");
+				expect(body.pagination).toBe("50");
 			});
 
 			it("should send POST to transaction-list-2 endpoint", async () => {
@@ -462,15 +460,18 @@ describe("PayWay", () => {
 					status: "APPROVED",
 				});
 
-				const { url } = getFetchCall(fetchSpy);
+				const { url, options } = getFetchCall(fetchSpy);
 				expect(url).toContain(
 					"/api/payment-gateway/v1/payments/transaction-list-2",
 				);
 
-				const body = getFormBody(fetchSpy);
-				expect(body.get("from_date")).toBe("2026-01-01");
-				expect(body.get("to_date")).toBe("2026-12-31");
-				expect(body.get("status")).toBe("APPROVED");
+				const headers = options.headers as Record<string, string>;
+				expect(headers["Content-Type"]).toBe("application/json");
+
+				const body = getJsonBody(fetchSpy);
+				expect(body.from_date).toBe("2026-01-01");
+				expect(body.to_date).toBe("2026-12-31");
+				expect(body.status).toBe("APPROVED");
 
 				expect(result.page).toBe("1");
 				expect(result.status.code).toBe("00");

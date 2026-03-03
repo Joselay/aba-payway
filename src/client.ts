@@ -23,7 +23,6 @@ import type {
 	TransactionParams,
 } from "./types.ts";
 import {
-	buildFormData,
 	filterParams,
 	formatAmount,
 	formatRequestTime,
@@ -270,7 +269,6 @@ export class PayWay {
 		return this.request<PayWayResponse<TransactionDetailData>>(
 			ENDPOINTS.transactionDetail,
 			params,
-			"json",
 		);
 	}
 
@@ -300,7 +298,6 @@ export class PayWay {
 		return this.request<CloseTransactionResponse>(
 			ENDPOINTS.closeTransaction,
 			params,
-			"json",
 		);
 	}
 
@@ -319,11 +316,7 @@ export class PayWay {
 			merchant_id: this.merchantId,
 		};
 
-		return this.request<ExchangeRateResponse>(
-			ENDPOINTS.exchangeRate,
-			params,
-			"json",
-		);
+		return this.request<ExchangeRateResponse>(ENDPOINTS.exchangeRate, params);
 	}
 
 	/**
@@ -416,11 +409,7 @@ export class PayWay {
 			payout: payout || undefined,
 		};
 
-		return this.request<GenerateQRResponse>(
-			ENDPOINTS.generateQR,
-			params,
-			"json",
-		);
+		return this.request<GenerateQRResponse>(ENDPOINTS.generateQR, params);
 	}
 
 	/**
@@ -449,33 +438,22 @@ export class PayWay {
 		return this.request<GetTransactionsByRefResponse>(
 			ENDPOINTS.getTransactionsByRef,
 			params,
-			"json",
 		);
 	}
 
 	private async request<T>(
 		endpoint: (typeof ENDPOINTS)[keyof typeof ENDPOINTS],
 		params: RequestParams,
-		format: "form" | "json" = "form",
 	): Promise<T> {
 		const url = `${this.baseUrl}${endpoint}`;
-
-		let body: FormData | string;
-		const headers: Record<string, string> = {};
-
-		if (format === "json") {
-			body = JSON.stringify(filterParams(params));
-			headers["Content-Type"] = "application/json";
-		} else {
-			body = buildFormData(params);
-		}
+		const body = JSON.stringify(filterParams(params));
 
 		let response: Response;
 		try {
 			response = await fetch(url, {
 				method: "POST",
 				body,
-				headers,
+				headers: { "Content-Type": "application/json" },
 				signal: AbortSignal.timeout(this.timeout),
 			});
 		} catch (error) {
