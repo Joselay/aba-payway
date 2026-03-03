@@ -1,6 +1,6 @@
 {
 	"name": "aba-payway",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Type-safe TypeScript SDK for ABA PayWay — Cambodia's #1 payment gateway",
 	"type": "module",
 	"main": "./dist/index.cjs",
