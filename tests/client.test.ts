@@ -866,7 +866,7 @@ describe("PayWay", () => {
 
 				const body = getJsonBody(fetchSpy);
 				expect(body.tran_id).toBe("qr-001");
-				expect(body.amount).toBe(10);
+				expect(body.amount).toBe("10.00");
 				expect(body.payment_option).toBe("abapay_khqr");
 				expect(body.qr_image_template).toBe("template1");
 				expect(body.lifetime).toBe(30);
@@ -930,6 +930,38 @@ describe("PayWay", () => {
 					"test-key",
 				);
 				expect(body.hash).toBe(expected);
+			});
+
+			it("should send amount as formatted decimal string, not raw number", async () => {
+				// Regression: whole numbers like 1 must be sent as "1.00" not 1,
+				// because the API hashes the exact string it receives — "1" ≠ "1.00"
+				fetchSpy.mockResolvedValueOnce(
+					new Response(
+						JSON.stringify({
+							status: { code: "0" },
+							amount: 1,
+							currency: "USD",
+							qrString: "",
+							qrImage: "",
+							abapay_deeplink: "",
+							app_store: "",
+							play_store: "",
+						}),
+						{ status: 200 },
+					),
+				);
+
+				await client.generateQR({
+					transactionId: "qr-001",
+					amount: 1,
+					paymentOption: "abapay_khqr",
+					qrImageTemplate: "template1",
+					lifetime: 30,
+				});
+
+				const body = getJsonBody(fetchSpy);
+				expect(body.amount).toBe("1.00");
+				expect(typeof body.amount).toBe("string");
 			});
 
 			it("should throw if transactionId is empty", async () => {

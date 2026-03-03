@@ -349,7 +349,7 @@ export class PayWay {
 			req_time: reqTime,
 			merchant_id: this.merchantId,
 			tran_id: options.transactionId,
-			amount: options.amount,
+			amount,
 			currency,
 			payment_option: options.paymentOption,
 			lifetime: options.lifetime,

@@ -167,10 +167,10 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 	describe("QR payment lifecycle", () => {
 		const tranId = `qr-${Date.now()}`;
 
-		it("Step 1: generate QR code", async () => {
+		it("Step 1: generate QR code (whole number amount — regression for hash mismatch bug)", async () => {
 			const result = await client.generateQR({
 				transactionId: tranId,
-				amount: 0.01,
+				amount: 1,
 				currency: "USD",
 				paymentOption: "abapay_khqr",
 				qrImageTemplate: "template1",
@@ -183,7 +183,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 
 			expect(result.status.code).toBe("0");
 			expect(result.status.tran_id).toBe(tranId);
-			expect(result.amount).toBe(0.01);
+			expect(result.amount).toBe(1);
 			expect(result.currency).toBe("USD");
 			expect(result.qrString).toBeTruthy();
 			expect(result.qrImage).toMatch(/^data:image\/png;base64,/);

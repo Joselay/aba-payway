@@ -318,7 +318,7 @@ export interface ListTransactionsParams extends BaseRequestParams {
 
 export interface GenerateQRParams extends BaseRequestParams {
 	tran_id: string;
-	amount: number;
+	amount: string;
 	currency: Currency;
 	payment_option: QRPaymentOption;
 	lifetime: number;
