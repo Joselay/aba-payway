@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	formatAmount,
-	formatRequestTime,
-	toBase64,
-} from "../src/utils.ts";
+import { formatAmount, formatRequestTime, toBase64 } from "../src/utils.ts";
 
 describe("formatRequestTime", () => {
 	it("should format date as yyyyMMddHHmmss in UTC", () => {
@@ -34,7 +30,6 @@ describe("formatRequestTime", () => {
 		expect(result).toMatch(/^\d{14}$/);
 	});
 });
-
 
 describe("formatAmount", () => {
 	it("should format USD to 2 decimal places", () => {

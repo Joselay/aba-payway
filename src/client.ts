@@ -408,7 +408,12 @@ export class PayWay {
 			[reqTime, this.merchantId, transactionId],
 			this.apiKey,
 		);
-		return { hash, tran_id: transactionId, req_time: reqTime, merchant_id: this.merchantId };
+		return {
+			hash,
+			tran_id: transactionId,
+			req_time: reqTime,
+			merchant_id: this.merchantId,
+		};
 	}
 
 	private async request<T>(

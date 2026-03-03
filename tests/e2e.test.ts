@@ -113,10 +113,10 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 
 			expect(result.status.code).toBe("00");
 			expect(result.data).toBeDefined();
-			expect(result.data!.payment_status).toBe("PENDING");
-			expect(result.data!.payment_status_code).toBe(2);
-			expect(result.data!.original_amount).toBe(1);
-			expect(result.data!.total_amount).toBe(1);
+			expect(result.data?.payment_status).toBe("PENDING");
+			expect(result.data?.payment_status_code).toBe(2);
+			expect(result.data?.original_amount).toBe(1);
+			expect(result.data?.total_amount).toBe(1);
 		});
 
 		it("Step 3: get transaction details — verify all fields", async () => {
@@ -125,6 +125,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 			expect(result.status.code).toBe("00");
 			expect(result.data).toBeDefined();
 
+			// biome-ignore lint/style/noNonNullAssertion: asserted defined above
 			const data = result.data!;
 			expect(data.transaction_id).toBe(tranId);
 			expect(data.payment_status).toBe("PENDING");
@@ -146,8 +147,8 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 
 			const found = result.data.find((t) => t.transaction_id === tranId);
 			expect(found).toBeDefined();
-			expect(found!.payment_status).toBe("PENDING");
-			expect(found!.original_amount).toBe(1);
+			expect(found?.payment_status).toBe("PENDING");
+			expect(found?.original_amount).toBe(1);
 		});
 
 		it("Step 5: close transaction — sandbox accepts the request", async () => {
@@ -196,18 +197,18 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 			const result = await client.checkTransaction(tranId);
 
 			expect(result.status.code).toBe("00");
-			expect(result.data!.payment_status).toBe("PENDING");
-			expect(result.data!.payment_status_code).toBe(2);
+			expect(result.data?.payment_status).toBe("PENDING");
+			expect(result.data?.payment_status_code).toBe(2);
 		});
 
 		it("Step 3: get transaction details", async () => {
 			const result = await client.getTransactionDetails(tranId);
 
 			expect(result.status.code).toBe("00");
-			expect(result.data!.transaction_id).toBe(tranId);
-			expect(result.data!.payment_status).toBe("PENDING");
-			expect(result.data!.first_name).toBe("Jane");
-			expect(result.data!.last_name).toBe("Smith");
+			expect(result.data?.transaction_id).toBe(tranId);
+			expect(result.data?.payment_status).toBe("PENDING");
+			expect(result.data?.first_name).toBe("Jane");
+			expect(result.data?.last_name).toBe("Smith");
 		});
 
 		it("Step 4: close transaction — sandbox accepts the request", async () => {
