@@ -346,10 +346,7 @@ export class PayWay {
 		if (!options.qrImageTemplate) {
 			throw new PayWayConfigError("qrImageTemplate is required");
 		}
-		if (
-			options.lifetime !== undefined &&
-			(options.lifetime < 3 || options.lifetime > 43_200)
-		) {
+		if (options.lifetime < 3 || options.lifetime > 43_200) {
 			throw new PayWayConfigError("lifetime must be between 3 and 43200");
 		}
 
@@ -389,7 +386,7 @@ export class PayWay {
 			customFields,
 			options.returnParams ?? "",
 			payout,
-			options.lifetime?.toString() ?? "",
+			options.lifetime.toString(),
 			options.qrImageTemplate,
 		];
 		const hash = createHash(hashValues, this.apiKey);

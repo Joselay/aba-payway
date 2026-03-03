@@ -128,7 +128,7 @@ export interface CheckTransactionData {
 	refund_amount: number;
 	discount_amount: number;
 	payment_amount: number;
-	payment_currency: Currency;
+	payment_currency: Currency | "";
 	apv: string;
 	payment_status: TransactionStatus;
 	transaction_date: string;
@@ -146,7 +146,7 @@ export interface TransactionListItem {
 	discount_amount: number;
 	refund_amount: number;
 	payment_amount: number;
-	payment_currency: Currency;
+	payment_currency: Currency | "";
 	first_name: string;
 	last_name: string;
 	email: string;
@@ -240,7 +240,7 @@ export interface GenerateQROptions {
 	amount: number;
 	currency?: Currency;
 	paymentOption: QRPaymentOption;
-	lifetime?: number;
+	lifetime: number;
 	qrImageTemplate: string;
 	firstName?: string;
 	lastName?: string;
@@ -322,7 +322,7 @@ export interface GenerateQRParams extends BaseRequestParams {
 	amount: number;
 	currency: Currency;
 	payment_option: QRPaymentOption;
-	lifetime?: number;
+	lifetime: number;
 	qr_image_template: string;
 	first_name?: string;
 	last_name?: string;

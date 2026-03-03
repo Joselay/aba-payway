@@ -6,6 +6,8 @@ import {
 	PayWayConfigError,
 	PayWayError,
 } from "../src/errors.ts";
+import { createHash } from "../src/hash.ts";
+import { toBase64 } from "../src/utils.ts";
 
 function getFetchCall(
 	spy: ReturnType<typeof vi.spyOn>,
@@ -374,6 +376,147 @@ describe("PayWay", () => {
 			expect(params.action).toContain("https://custom.example.com");
 			expect(params.action).not.toContain(PRODUCTION_BASE_URL);
 		});
+
+		it("should produce hash matching documented field order (pinned vector)", () => {
+			// Field order per docs/01-purchase.md hash section:
+			// req_time, merchant_id, tran_id, amount, items, shipping,
+			// firstname, lastname, email, phone, type, payment_option,
+			// return_url, cancel_url, continue_success_url, return_deeplink,
+			// currency, custom_fields, return_params, payout, lifetime,
+			// additional_params, google_pay_token, skip_success_page
+			const client = new PayWay({
+				merchantId: "ec000002",
+				apiKey: "test-api-key",
+			});
+			const params = client.createTransaction({
+				transactionId: "TXN001",
+				amount: 1,
+			});
+			const expected = createHash(
+				[
+					params.req_time,
+					"ec000002",
+					"TXN001",
+					"1.00",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"purchase",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"USD",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+				],
+				"test-api-key",
+			);
+			expect(params.hash).toBe(expected);
+		});
+
+		it("should use base64-encoded return_url in hash, not raw URL", () => {
+			// Verifies that encoded values (not raw) flow into hash computation
+			const client = new PayWay({
+				merchantId: "ec000002",
+				apiKey: "test-api-key",
+			});
+			const returnUrl = "https://example.com/callback";
+			const params = client.createTransaction({
+				transactionId: "TXN001",
+				amount: 1,
+				returnUrl,
+			});
+			const encodedUrl = toBase64(returnUrl);
+			expect(params.return_url).toBe(encodedUrl);
+			const expected = createHash(
+				[
+					params.req_time,
+					"ec000002",
+					"TXN001",
+					"1.00",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"purchase",
+					"",
+					encodedUrl,
+					"",
+					"",
+					"",
+					"USD",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+				],
+				"test-api-key",
+			);
+			expect(params.hash).toBe(expected);
+		});
+
+		it("should exclude view_type and payment_gate from hash", () => {
+			// Per docs/01-purchase.md: view_type and payment_gate are NOT in hash
+			const client = new PayWay({
+				merchantId: "ec000002",
+				apiKey: "test-api-key",
+			});
+			const params = client.createTransaction({
+				transactionId: "TXN001",
+				amount: 1,
+				viewType: "checkout",
+				paymentGate: 1,
+			});
+			// view_type and payment_gate appear in output params
+			expect(params.view_type).toBe("checkout");
+			expect(params.payment_gate).toBe("1");
+			// But hash is computed without them
+			const expected = createHash(
+				[
+					params.req_time,
+					"ec000002",
+					"TXN001",
+					"1.00",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"purchase",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"USD",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+				],
+				"test-api-key",
+			);
+			expect(params.hash).toBe(expected);
+		});
 	});
 
 	describe("API calls", () => {
@@ -397,6 +540,22 @@ describe("PayWay", () => {
 				await expect(client.checkTransaction("")).rejects.toThrow(
 					"transactionId is required",
 				);
+			});
+
+			it("should compute hash over req_time, merchant_id, and tran_id", async () => {
+				// Field order per docs/02-check-transaction.md: req_time, merchant_id, tran_id
+				fetchSpy.mockResolvedValueOnce(
+					new Response(JSON.stringify({ status: { code: "00" }, data: {} }), {
+						status: 200,
+					}),
+				);
+				await client.checkTransaction("order-001");
+				const body = getJsonBody(fetchSpy);
+				const expected = createHash(
+					[body.req_time as string, "test-merchant", "order-001"],
+					"test-key",
+				);
+				expect(body.hash).toBe(expected);
 			});
 
 			it("should send POST to check-transaction-2 endpoint", async () => {
@@ -488,9 +647,10 @@ describe("PayWay", () => {
 					new Response(JSON.stringify(mockResponse), { status: 200 }),
 				);
 
+				// Dates must use YYYY-MM-DD HH:mm:ss format per docs/04-get-transaction-list.md
 				const result = await client.listTransactions({
-					fromDate: "2026-01-01",
-					toDate: "2026-12-31",
+					fromDate: "2026-01-01 00:00:00",
+					toDate: "2026-12-31 23:59:59",
 					status: "APPROVED",
 				});
 
@@ -503,11 +663,12 @@ describe("PayWay", () => {
 				expect(headers["Content-Type"]).toBe("application/json");
 
 				const body = getJsonBody(fetchSpy);
-				expect(body.from_date).toBe("2026-01-01");
-				expect(body.to_date).toBe("2026-12-31");
+				expect(body.from_date).toBe("2026-01-01 00:00:00");
+				expect(body.to_date).toBe("2026-12-31 23:59:59");
 				expect(body.status).toBe("APPROVED");
 
 				expect(result.page).toBe("1");
+				expect(result.pagination).toBe("20");
 				expect(result.status.code).toBe("00");
 			});
 
@@ -716,6 +877,61 @@ describe("PayWay", () => {
 				expect(result.status.trace_id).toBe("abc123");
 			});
 
+			it("should compute hash with correct field order (pinned vector)", async () => {
+				// Field order per docs/14-qr-api.md:
+				// req_time, merchant_id, tran_id, amount, items, first_name, last_name,
+				// email, phone, purchase_type, payment_option, callback_url, return_deeplink,
+				// currency, custom_fields, return_params, payout, lifetime, qr_image_template
+				fetchSpy.mockResolvedValueOnce(
+					new Response(
+						JSON.stringify({
+							status: { code: "0" },
+							amount: 10,
+							currency: "USD",
+							qrString: "",
+							qrImage: "",
+							abapay_deeplink: "",
+							app_store: "",
+							play_store: "",
+						}),
+						{ status: 200 },
+					),
+				);
+				await client.generateQR({
+					transactionId: "qr-001",
+					amount: 10,
+					paymentOption: "abapay_khqr",
+					qrImageTemplate: "template1",
+					lifetime: 30,
+				});
+				const body = getJsonBody(fetchSpy);
+				const expected = createHash(
+					[
+						body.req_time as string,
+						"test-merchant",
+						"qr-001",
+						"10.00",
+						"",
+						"",
+						"",
+						"",
+						"",
+						"",
+						"abapay_khqr",
+						"",
+						"",
+						"USD",
+						"",
+						"",
+						"",
+						"30",
+						"template1",
+					],
+					"test-key",
+				);
+				expect(body.hash).toBe(expected);
+			});
+
 			it("should throw if transactionId is empty", async () => {
 				await expect(
 					client.generateQR({
@@ -723,6 +939,7 @@ describe("PayWay", () => {
 						amount: 10,
 						paymentOption: "abapay_khqr",
 						qrImageTemplate: "template1",
+						lifetime: 30,
 					}),
 				).rejects.toThrow("transactionId is required");
 			});
@@ -734,6 +951,7 @@ describe("PayWay", () => {
 						amount: 0,
 						paymentOption: "abapay_khqr",
 						qrImageTemplate: "template1",
+						lifetime: 30,
 					}),
 				).rejects.toThrow("amount must be greater than 0");
 			});
@@ -746,6 +964,7 @@ describe("PayWay", () => {
 						// @ts-expect-error testing empty string validation
 						paymentOption: "",
 						qrImageTemplate: "template1",
+						lifetime: 30,
 					}),
 				).rejects.toThrow("paymentOption is required");
 			});
@@ -757,6 +976,7 @@ describe("PayWay", () => {
 						amount: 10,
 						paymentOption: "abapay_khqr",
 						qrImageTemplate: "",
+						lifetime: 30,
 					}),
 				).rejects.toThrow("qrImageTemplate is required");
 			});
@@ -805,6 +1025,7 @@ describe("PayWay", () => {
 					amount: 10,
 					paymentOption: "abapay_khqr",
 					qrImageTemplate: "template1",
+					lifetime: 30,
 					items: "Test Item",
 					callbackUrl: "https://example.com/callback",
 					returnDeeplink: "myapp://callback",
