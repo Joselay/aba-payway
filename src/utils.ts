@@ -15,22 +15,16 @@ export function formatRequestTime(date: Date = new Date()): string {
 export function filterParams(params: object): Record<string, string | number> {
 	const out: Record<string, string | number> = {};
 	for (const [key, value] of Object.entries(params)) {
-		if (value !== undefined && value !== null && value !== "") {
-			out[key] = value as string | number;
+		if (
+			value !== undefined &&
+			value !== null &&
+			value !== "" &&
+			(typeof value === "string" || typeof value === "number")
+		) {
+			out[key] = value;
 		}
 	}
 	return out;
-}
-
-/** Build a FormData object from a record, skipping `undefined`, `null`, and empty string values. */
-export function buildFormData(params: object): FormData {
-	const formData = new FormData();
-	for (const [key, value] of Object.entries(params)) {
-		if (value !== undefined && value !== null && value !== "") {
-			formData.append(key, String(value));
-		}
-	}
-	return formData;
 }
 
 /** Format a numeric amount as a string: 2 decimal places for USD, rounded integer for KHR. */

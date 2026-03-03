@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-	buildFormData,
 	formatAmount,
 	formatRequestTime,
 	toBase64,
@@ -36,31 +35,6 @@ describe("formatRequestTime", () => {
 	});
 });
 
-describe("buildFormData", () => {
-	it("should create FormData with provided params", () => {
-		const formData = buildFormData({ key1: "value1", key2: "value2" });
-		expect(formData.get("key1")).toBe("value1");
-		expect(formData.get("key2")).toBe("value2");
-	});
-
-	it("should skip undefined values", () => {
-		const formData = buildFormData({ key1: "value1", key2: undefined });
-		expect(formData.get("key1")).toBe("value1");
-		expect(formData.has("key2")).toBe(false);
-	});
-
-	it("should skip empty string values", () => {
-		const formData = buildFormData({ key1: "value1", key2: "" });
-		expect(formData.get("key1")).toBe("value1");
-		expect(formData.has("key2")).toBe(false);
-	});
-
-	it("should handle empty params object", () => {
-		const formData = buildFormData({});
-		const entries = Array.from(formData.entries());
-		expect(entries.length).toBe(0);
-	});
-});
 
 describe("formatAmount", () => {
 	it("should format USD to 2 decimal places", () => {

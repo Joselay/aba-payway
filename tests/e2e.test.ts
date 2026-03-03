@@ -17,7 +17,16 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PayWay } from "../src/client.ts";
-import { buildFormData } from "../src/utils.ts";
+
+function toFormData(params: object): FormData {
+	const formData = new FormData();
+	for (const [key, value] of Object.entries(params)) {
+		if (value !== undefined && value !== null && value !== "") {
+			formData.append(key, String(value));
+		}
+	}
+	return formData;
+}
 
 // Load .env manually since vitest v4 doesn't auto-load it
 function loadEnvFile() {
@@ -87,7 +96,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 			const { action, ...formFields } = params;
 			const resp = await fetch(action, {
 				method: "POST",
-				body: buildFormData(formFields),
+				body: toFormData(formFields),
 			});
 			const body = await resp.json();
 
