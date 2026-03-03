@@ -175,7 +175,7 @@ describe("PayWay", () => {
 				apiKey: "k",
 			});
 
-			const items = [{ name: "Ticket", quantity: "1", price: "10.00" }];
+			const items = [{ name: "Ticket", quantity: 1, price: 10.0 }];
 			const params = client.createTransaction({
 				transactionId: "t1",
 				amount: 10,

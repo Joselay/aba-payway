@@ -83,7 +83,7 @@ describe.skipIf(!hasCredentials)("E2E: Sandbox", () => {
 				lastName: "Doe",
 				email: "john@example.com",
 				phone: "012345678",
-				items: [{ name: "Widget", quantity: "1", price: "1.00" }],
+				items: [{ name: "Widget", quantity: 1, price: 1.0 }],
 			});
 
 			expect(params.hash).toBeTruthy();

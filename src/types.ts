@@ -61,8 +61,8 @@ export interface CreateTransactionOptions {
 
 export interface ItemEntry {
 	name: string;
-	quantity: string;
-	price: string;
+	quantity: number;
+	price: number;
 }
 
 /** Form parameters returned by createTransaction, to be submitted from the browser */
@@ -188,7 +188,7 @@ export interface TransactionDetailData {
 	original_amount: number;
 	original_currency: Currency;
 	payment_amount: number;
-	payment_currency: Currency;
+	payment_currency: Currency | "";
 	total_amount: number;
 	refund_amount: number;
 	discount_amount: number;
