@@ -115,7 +115,8 @@ export interface PayWayResponse<T> {
 }
 
 export interface PayWayResponseStatus {
-	code: string;
+	/** `"00"` (string) on success; error codes are numbers (e.g. `5`, `6`) or strings (e.g. `"PTL02"`) depending on the endpoint. */
+	code: string | number;
 	message?: string;
 	tran_id?: string;
 	merchant_ref?: string;
