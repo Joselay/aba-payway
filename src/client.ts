@@ -109,6 +109,14 @@ export class PayWay {
 				? formatAmount(options.shipping, currency)
 				: "";
 
+		// Base64-encode custom_fields and additional_params per ABA docs
+		const customFields = options.customFields
+			? toBase64(options.customFields)
+			: "";
+		const additionalParams = options.additionalParams
+			? toBase64(options.additionalParams)
+			: "";
+
 		// Hash field order from remote docs (view_type and payment_gate are NOT in hash)
 		const hashValues = [
 			reqTime,
@@ -128,11 +136,11 @@ export class PayWay {
 			options.continueSuccessUrl ?? "",
 			returnDeeplink,
 			currency,
-			options.customFields ?? "",
+			customFields,
 			options.returnParams ?? "",
 			payout,
 			options.lifetime?.toString() ?? "",
-			options.additionalParams ?? "",
+			additionalParams,
 			options.googlePayToken ?? "",
 			options.skipSuccessPage?.toString() ?? "",
 		];
@@ -160,10 +168,10 @@ export class PayWay {
 			shipping,
 			merchant_id: this.merchantId,
 			req_time: reqTime,
-			custom_fields: options.customFields ?? "",
+			custom_fields: customFields,
 			payout,
 			lifetime: options.lifetime?.toString() ?? "",
-			additional_params: options.additionalParams ?? "",
+			additional_params: additionalParams,
 			google_pay_token: options.googlePayToken ?? "",
 			skip_success_page: options.skipSuccessPage?.toString() ?? "",
 			view_type: options.viewType ?? "",

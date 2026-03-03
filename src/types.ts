@@ -118,6 +118,7 @@ export interface PayWayResponseStatus {
 	code: string;
 	message?: string;
 	tran_id?: string;
+	merchant_ref?: string;
 }
 
 export interface CheckTransactionData {

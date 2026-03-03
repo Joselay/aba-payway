@@ -235,6 +235,40 @@ describe("PayWay", () => {
 			);
 		});
 
+		it("should base64-encode customFields", () => {
+			const client = new PayWay({
+				merchantId: "m",
+				apiKey: "k",
+			});
+
+			const params = client.createTransaction({
+				transactionId: "t1",
+				amount: 1,
+				customFields: '{"field1":"value1"}',
+			});
+
+			expect(Buffer.from(params.custom_fields, "base64").toString()).toBe(
+				'{"field1":"value1"}',
+			);
+		});
+
+		it("should base64-encode additionalParams", () => {
+			const client = new PayWay({
+				merchantId: "m",
+				apiKey: "k",
+			});
+
+			const params = client.createTransaction({
+				transactionId: "t1",
+				amount: 1,
+				additionalParams: '{"wechat_sub_appid":"app123"}',
+			});
+
+			expect(Buffer.from(params.additional_params, "base64").toString()).toBe(
+				'{"wechat_sub_appid":"app123"}',
+			);
+		});
+
 		it("should format shipping amount like the main amount", () => {
 			const client = new PayWay({
 				merchantId: "m",
