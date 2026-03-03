@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PayWay } from "../src/client.ts";
-import { PRODUCTION_BASE_URL, SANDBOX_BASE_URL } from "../src/constants.ts";
+import { BASE_URLS } from "../src/constants.ts";
 import {
 	PayWayAPIError,
 	PayWayConfigError,
@@ -144,7 +144,7 @@ describe("PayWay", () => {
 			expect(params.currency).toBe("USD");
 			expect(params.hash).toBeTruthy();
 			expect(params.req_time).toMatch(/^\d{14}$/);
-			expect(params.action).toContain(SANDBOX_BASE_URL);
+			expect(params.action).toContain(BASE_URLS.sandbox);
 			expect(params.payout).toBe("");
 			expect(params.lifetime).toBe("");
 			expect(params.additional_params).toBe("");
@@ -328,7 +328,7 @@ describe("PayWay", () => {
 				amount: 1,
 			});
 
-			expect(params.action).toContain(PRODUCTION_BASE_URL);
+			expect(params.action).toContain(BASE_URLS.production);
 		});
 
 		it("should default to sandbox when environment is omitted", () => {
@@ -342,7 +342,7 @@ describe("PayWay", () => {
 				amount: 1,
 			});
 
-			expect(params.action).toContain(SANDBOX_BASE_URL);
+			expect(params.action).toContain(BASE_URLS.sandbox);
 		});
 
 		it("should use baseUrl override when provided", () => {
@@ -374,7 +374,7 @@ describe("PayWay", () => {
 			});
 
 			expect(params.action).toContain("https://custom.example.com");
-			expect(params.action).not.toContain(PRODUCTION_BASE_URL);
+			expect(params.action).not.toContain(BASE_URLS.production);
 		});
 
 		it("should produce hash matching documented field order (pinned vector)", () => {

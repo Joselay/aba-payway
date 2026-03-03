@@ -5,9 +5,6 @@ export const BASE_URLS: Record<Environment, string> = {
 	production: "https://checkout.payway.com.kh",
 };
 
-export const SANDBOX_BASE_URL = BASE_URLS.sandbox;
-export const PRODUCTION_BASE_URL = BASE_URLS.production;
-
 export const ENDPOINTS = {
 	purchase: "/api/payment-gateway/v1/payments/purchase",
 	checkTransaction: "/api/payment-gateway/v1/payments/check-transaction-2",

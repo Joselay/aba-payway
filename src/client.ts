@@ -6,7 +6,6 @@ import type {
 	CheckTransactionData,
 	CloseTransactionResponse,
 	CreateTransactionOptions,
-	ExchangeRateParams,
 	ExchangeRateResponse,
 	GenerateQROptions,
 	GenerateQRParams,
@@ -187,25 +186,9 @@ export class PayWay {
 	async checkTransaction(
 		transactionId: string,
 	): Promise<PayWayResponse<CheckTransactionData>> {
-		if (!transactionId) {
-			throw new PayWayConfigError("transactionId is required");
-		}
-
-		const reqTime = formatRequestTime();
-
-		const hashValues = [reqTime, this.merchantId, transactionId];
-		const hash = createHash(hashValues, this.apiKey);
-
-		const params: TransactionParams = {
-			hash,
-			tran_id: transactionId,
-			req_time: reqTime,
-			merchant_id: this.merchantId,
-		};
-
 		return this.request<PayWayResponse<CheckTransactionData>>(
 			ENDPOINTS.checkTransaction,
-			params,
+			this.buildTransactionParams(transactionId),
 		);
 	}
 
@@ -259,24 +242,9 @@ export class PayWay {
 	async getTransactionDetails(
 		transactionId: string,
 	): Promise<PayWayResponse<TransactionDetailData>> {
-		if (!transactionId) {
-			throw new PayWayConfigError("transactionId is required");
-		}
-
-		const reqTime = formatRequestTime();
-		const hashValues = [reqTime, this.merchantId, transactionId];
-		const hash = createHash(hashValues, this.apiKey);
-
-		const params: TransactionParams = {
-			hash,
-			tran_id: transactionId,
-			req_time: reqTime,
-			merchant_id: this.merchantId,
-		};
-
 		return this.request<PayWayResponse<TransactionDetailData>>(
 			ENDPOINTS.transactionDetail,
-			params,
+			this.buildTransactionParams(transactionId),
 		);
 	}
 
@@ -288,24 +256,9 @@ export class PayWay {
 	async closeTransaction(
 		transactionId: string,
 	): Promise<CloseTransactionResponse> {
-		if (!transactionId) {
-			throw new PayWayConfigError("transactionId is required");
-		}
-
-		const reqTime = formatRequestTime();
-		const hashValues = [reqTime, this.merchantId, transactionId];
-		const hash = createHash(hashValues, this.apiKey);
-
-		const params: TransactionParams = {
-			hash,
-			tran_id: transactionId,
-			req_time: reqTime,
-			merchant_id: this.merchantId,
-		};
-
 		return this.request<CloseTransactionResponse>(
 			ENDPOINTS.closeTransaction,
-			params,
+			this.buildTransactionParams(transactionId),
 		);
 	}
 
@@ -318,7 +271,7 @@ export class PayWay {
 		const hashValues = [reqTime, this.merchantId];
 		const hash = createHash(hashValues, this.apiKey);
 
-		const params: ExchangeRateParams = {
+		const params = {
 			hash,
 			req_time: reqTime,
 			merchant_id: this.merchantId,
@@ -444,6 +397,18 @@ export class PayWay {
 			ENDPOINTS.getTransactionsByRef,
 			params,
 		);
+	}
+
+	private buildTransactionParams(transactionId: string): TransactionParams {
+		if (!transactionId) {
+			throw new PayWayConfigError("transactionId is required");
+		}
+		const reqTime = formatRequestTime();
+		const hash = createHash(
+			[reqTime, this.merchantId, transactionId],
+			this.apiKey,
+		);
+		return { hash, tran_id: transactionId, req_time: reqTime, merchant_id: this.merchantId };
 	}
 
 	private async request<T>(

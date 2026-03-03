@@ -315,8 +315,6 @@ export interface ListTransactionsParams extends BaseRequestParams {
 	pagination?: string;
 }
 
-export interface ExchangeRateParams extends BaseRequestParams {}
-
 export interface GenerateQRParams extends BaseRequestParams {
 	tran_id: string;
 	amount: number;
@@ -344,6 +342,5 @@ export interface GetTransactionsByRefParams extends BaseRequestParams {
 export type RequestParams =
 	| TransactionParams
 	| ListTransactionsParams
-	| ExchangeRateParams
 	| GenerateQRParams
 	| GetTransactionsByRefParams;
